@@ -1,0 +1,6 @@
+{
+  "name": "NutriCart AI",
+  "description": "AI-powered grocery shopping assistant and nutrition optimizer that finds the healthiest and cheapest food lists matching your macros and budget.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+/* Define custom theme variables or styles for dark-theme */
+body.dark-theme {
+  background-color: #121212 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Base resets & scrollbars in dark theme */
+body.dark-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body.dark-theme ::-webkit-scrollbar-track {
+  background: #121212;
+}
+body.dark-theme ::-webkit-scrollbar-thumb {
+  background: #2d2d2d;
+  border-radius: 999px;
+}
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #3e3e3e;
+}
+
+/* Background overrides */
+body.dark-theme #onboarding-screen,
+body.dark-theme .min-h-screen,
+body.dark-theme .bg-\[\#F8F9FA\],
+body.dark-theme .bg-slate-50,
+body.dark-theme .bg-slate-100 {
+  background-color: #121212 !important;
+}
+
+body.dark-theme .bg-white {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-theme .bg-slate-50\/20,
+body.dark-theme .bg-slate-50\/30,
+body.dark-theme .bg-slate-50\/50,
+body.dark-theme .bg-slate-100\/50,
+body.dark-theme .bg-slate-100\/80,
+body.dark-theme .bg-slate-50\/10 {
+  background-color: #1a1a1a !important;
+}
+
+body.dark-theme .bg-slate-200,
+body.dark-theme .bg-slate-200\/50 {
+  background-color: #2a2a2a !important;
+}
+
+/* Card custom styles */
+body.dark-theme .bg-white.rounded-3xl,
+body.dark-theme .bg-white.rounded-2xl {
+  background-color: #1e1e1e !important;
+  border-color: #2d2d2d !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Headers and borders */
+body.dark-theme nav {
+  background-color: #1a1a1a !important;
+  border-color: #2d2d2d !important;
+}
+
+body.dark-theme .border,
+body.dark-theme .border-slate-100,
+body.dark-theme .border-slate-200,
+body.dark-theme .border-slate-200\/50,
+body.dark-theme .border-slate-200\/60,
+body.dark-theme .border-slate-300,
+body.dark-theme .border-slate-300\/30,
+body.dark-theme .border-slate-300\/50,
+body.dark-theme .divide-slate-50 > *,
+body.dark-theme .divide-slate-100 > *,
+body.dark-theme .divide-y > * {
+  border-color: #2d2d2d !important;
+}
+
+/* Header border & details */
+body.dark-theme .border-b,
+body.dark-theme .border-t,
+body.dark-theme .border-r,
+body.dark-theme .border-l {
+  border-color: #2d2d2d !important;
+}
+
+/* Input elements styling */
+body.dark-theme input[type="text"],
+body.dark-theme input[type="number"],
+body.dark-theme input[type="search"],
+body.dark-theme select,
+body.dark-theme textarea {
+  background-color: #1a1a1a !important;
+  color: #f8fafc !important;
+  border-color: #2d2d2d !important;
+}
+
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Text overrides for primary typography */
+body.dark-theme .text-slate-900,
+body.dark-theme .text-slate-800,
+body.dark-theme .text-slate-700,
+body.dark-theme .text-slate-850 {
+  color: #f8fafc !important;
+}
+
+/* Muted or subtext */
+body.dark-theme .text-slate-500,
+body.dark-theme .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+body.dark-theme .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+body.dark-theme .text-slate-300 {
+  color: #64748b !important;
+}
+
+/* Icons or text on white button */
+body.dark-theme .hover\:bg-slate-100:hover,
+body.dark-theme .hover\:bg-slate-50:hover {
+  background-color: #2d2d2d !important;
+}
+
+body.dark-theme .hover\:text-slate-800:hover {
+  color: #f8fafc !important;
+}
+
+/* Chat bubles left / AI */
+body.dark-theme .bg-[#F1F5F9],
+body.dark-theme .bg-slate-100 {
+  background-color: #262626 !important;
+  color: #cbd5e1 !important;
+}
+
+/* Hover over list items or table rows */
+body.dark-theme .hover\:bg-slate-50\/30:hover,
+body.dark-theme .hover\:bg-slate-50:hover,
+body.dark-theme .hover\:bg-slate-100\/50:hover,
+body.dark-theme .hover\:bg-green-50\/50:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Tables style */
+body.dark-theme table {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-theme th {
+  color: #94a3b8 !important;
+}
+
+body.dark-theme td {
+  border-bottom-color: #2d2d2d !important;
+}
+
+/* Smart Pantry Expiration Badge */
+body.dark-theme .bg-green-50 {
+  background-color: #152d19 !important;
+  color: #4CAF50 !important;
+}
+
+body.dark-theme .text-green-700,
+body.dark-theme .text-[#2E7D32] {
+  color: #4CAF50 !important;
+}
+
+/* Modals overlays background and colors */
+body.dark-theme .fixed.inset-0.bg-slate-900\/60 {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+body.dark-theme .bg-slate-50\/50 {
+  background-color: #161616 !important;
+}
+
+/* Keep amber card texts clean and high-contrast */
+body.dark-theme #budget-efficiency {
+  background-color: #FFC107 !important;
+}
+
+body.dark-theme #budget-efficiency .text-amber-900,
+body.dark-theme #budget-efficiency .text-amber-950,
+body.dark-theme #budget-efficiency .text-amber-900\/60,
+body.dark-theme #budget-efficiency p,
+body.dark-theme #budget-efficiency h3,
+body.dark-theme #budget-efficiency span {
+  color: #451a03 !important;
+}
+
+body.dark-theme #budget-efficiency input {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  color: #451a03 !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+body.dark-theme #budget-efficiency input::placeholder {
+  color: rgba(69, 26, 3, 0.6) !important;
+}
+
+body.dark-theme #budget-efficiency button.bg-amber-900 {
+  background-color: #451a03 !important;
+  color: #ffffff !important;
+}
+
+/* Keep recipe planner day headings clear */
+body.dark-theme .bg-indigo-50 {
+  background-color: #1e1b4b !important;
+}
+body.dark-theme .text-indigo-900 {
+  color: #e0e7ff !important;
+}
+body.dark-theme .text-indigo-700 {
+  color: #818cf8 !important;
+}
+body.dark-theme .border-indigo-100 {
+  border-color: #312e81 !important;
+}
+
+body.dark-theme .bg-blue-50 {
+  background-color: #172554 !important;
+}
+body.dark-theme .text-blue-700 {
+  color: #93c5fd !important;
+}
