@@ -36,7 +36,8 @@ import {
   Download,
   Settings,
   Sun,
-  Moon
+  Moon,
+  AlertTriangle
 } from 'lucide-react';
 import { OnboardingData, FoodProduct, ChatMessage, PantryItem, MealPlan, ShoppingItem } from './types';
 import { FOOD_DATABASE, searchProducts } from './foodDb';
@@ -62,6 +63,21 @@ export const COUNTRIES: Record<string, {
       'Metro': 'Metro',
       'Auchan': 'Auchan',
       'Mega Image': 'Mega Image'
+    }
+  },
+  "Moldova": {
+    name: "Moldova",
+    currency: "MDL",
+    currencySymbol: "MDL",
+    rate: 3.84,
+    stores: ['Linella', 'Metro', 'Nr1', 'Kaufland'],
+    storeMap: {
+      'Lidl': 'Linella',
+      'Kaufland': 'Kaufland',
+      'Carrefour': 'Nr1',
+      'Metro': 'Metro',
+      'Auchan': 'Linella',
+      'Mega Image': 'Nr1'
     }
   },
   "United States": {
@@ -707,6 +723,100 @@ const isAllergicOrDisliked = (product: FoodProduct, allergies: string[], dislike
   return false;
 };
 
+export interface DietResearchProfile {
+  title: string;
+  targetProteinAnalysis: string;
+  targetCarbAnalysis: string;
+  targetFatAnalysis: string;
+  primaryWarning: string;
+  clinicalStudyCitation: string;
+  clinicalExplanation: string;
+}
+
+export const DIET_RESEARCH_DATABASE: Record<string, DietResearchProfile> = {
+  'High Protein': {
+    title: 'High Protein Dietary Science',
+    targetProteinAnalysis: 'Set exceptionally high (38% of daily energy intake, up to 2.2g per kg of bodyweight). High protein targets are clinically validated to support muscle protein synthesis (MPS) during progressive overload, preserve lean mass in caloric deficits, and enhance meal-induced thermogenesis.',
+    targetCarbAnalysis: 'Maintained at a moderate level (37%) to sustain high-intensity anaerobic training (glycogen stores) while preventing excessive lipid storage.',
+    targetFatAnalysis: 'Kept at a moderate-low 25% to maximize the caloric allocation for muscle-building macronutrients.',
+    primaryWarning: '⚠️ High Urea Clearance Warning: Elevated protein intake increases the clearance demand on your kidneys. Clinical research recommends consuming at least 2.5L to 3.0L of water daily to facilitate safe urea clearance and avoid dehydration.',
+    clinicalStudyCitation: 'Phillips, S. M. et al. (2016). "A Systematic Review of Dietary Protein Intake on Muscle Mass." American Journal of Clinical Nutrition, 104(3).',
+    clinicalExplanation: 'Standard guidelines recommend 0.8g/kg, but resistance-trained athletes require 1.6 - 2.2g/kg. Your target represents this specialized athletic ceiling, maximizing hypertrophic muscle adaptation.'
+  },
+  'Keto': {
+    title: 'Ketogenic Lipid Science & Research',
+    targetProteinAnalysis: 'Kept moderate (20%) because excess protein can undergo gluconeogenesis, transforming amino acids into glucose and potentially disrupting systemic ketosis.',
+    targetCarbAnalysis: 'Restricted to a critical floor of 5% (typically <30g of net carbohydrates). This severe restriction is required to deplete hepatic glycogen stores, stimulating beta-oxidation and hepatic ketone body generation.',
+    targetFatAnalysis: 'Set exceptionally high (75% of total calories). Fat becomes the primary metabolic substrate to synthesize Acetyl-CoA for ketone production.',
+    primaryWarning: '⚠️ Keto-Flu & Saturated Fat Warning: Rapid depletion of glycogen leads to sodium and water excretion. Supplement with electrolytes (sodium, potassium, magnesium). Prioritize monounsaturated fats (extra virgin olive oil, avocados) over heavy saturated animal fats to protect LDL profiles.',
+    clinicalStudyCitation: 'Volek, J. S., Phinney, S. D. et al. (2015). "Metabolic Characteristics of Keto-Adapted Ultra-Endurance Athletes." Metabolism Clinical and Experimental, 64(11).',
+    clinicalExplanation: 'In ketosis, systemic insulin levels drop dramatically, prompting kidneys to excrete water and crucial minerals. This is the physiological origin of the "keto flu".'
+  },
+  'Low Carb': {
+    title: 'Carbohydrate Restriction Metabolism',
+    targetProteinAnalysis: 'Set at a robust 30% to support metabolic rate and satiety during active carb reduction.',
+    targetCarbAnalysis: 'Capped at 20% to help stabilize postprandial insulin surges, shifting metabolic reliance towards lipid oxidation without entering deep ketosis.',
+    targetFatAnalysis: 'Elevated to 50% to provide clean, durable energy from fats, compensating for the reduced glucose availability.',
+    primaryWarning: '⚠️ Fiber & Micronutrient Care: Ensure that your remaining 20% of carbs are fully sourced from non-starchy leafy greens and cruciferous vegetables to maintain a minimum of 25g daily prebiotic fiber.',
+    clinicalStudyCitation: 'Feinman, R. D. et al. (2015). "Dietary Carbohydrate Restriction as the First Approach in Diabetes Management." Nutrition Journal, 31(1).',
+    clinicalExplanation: 'Carbohydrate restriction improves glucose control and significantly reduces serum triglycerides, making it highly effective for metabolic syndrome management.'
+  },
+  'Mediterranean': {
+    title: 'Cardiovascular Dietetics & Research',
+    targetProteinAnalysis: 'Set at 20%, focused primarily on marine, poultry, and plant-based (legumes) protein sources rather than red meats.',
+    targetCarbAnalysis: 'Set at 45% utilizing slow-digesting complex carbohydrates (whole grains, oats) rich in soluble dietary fiber.',
+    targetFatAnalysis: 'Set at 35% with a strict clinical focus on monounsaturated fatty acids (MUFAs), primarily sourced from cold-pressed extra virgin olive oil.',
+    primaryWarning: '⚠️ Caloric Density: While extra virgin olive oil and walnuts are exceptionally cardio-protective, they are highly energy-dense. Stick strictly to mapped portion sizes.',
+    clinicalStudyCitation: 'Estruch, R. et al. (2018). "Primary Prevention of Cardiovascular Disease with a Mediterranean Diet." New England Journal of Medicine (PREDIMED Trial), 378(25).',
+    clinicalExplanation: 'The landmark PREDIMED trial demonstrated a 30% relative risk reduction in major cardiovascular events for participants assigned to a Mediterranean diet supplemented with extra-virgin olive oil or nuts.'
+  },
+  'Vegan': {
+    title: 'Plant-Based Macronutrient Bioavailability',
+    targetProteinAnalysis: 'Set at 15%. Because plant proteins (such as legumes and grains) often have lower biological value and digestibility, the target is focused on maximizing diversity.',
+    targetCarbAnalysis: 'Optimized at 60% using complex starches, legumes, and root crops which are highly rich in essential micronutrients and prebiotic dietary fiber.',
+    targetFatAnalysis: 'Kept at a moderate 25%, prioritizing seed oils, nuts, and avocados.',
+    primaryWarning: '⚠️ B12, Iron & Lysine Warning: Non-heme iron from plants has a 50% lower absorption rate. Always consume iron-rich legumes alongside Vitamin C (e.g., squeeze fresh lemon juice) to double bioavailability. Daily Vitamin B12 supplementation is medically required.',
+    clinicalStudyCitation: 'Melina, V., Craig, W., & Levin, S. (2016). "Position of the Academy of Nutrition and Dietetics: Vegetarian and Vegan Diets." Journal of the Academy of Nutrition and Dietetics, 116(12).',
+    clinicalExplanation: 'Plant-based proteins are often limiting in specific amino acids (such as lysine in grains, or methionine in legumes). Consuming complementary proteins throughout the day resolves this.'
+  },
+  'Vegetarian': {
+    title: 'Lacto-Ovo Vegetarian Dietetics',
+    targetProteinAnalysis: 'Set at 18%, easily met through a combination of high-quality dairy, eggs, and rich plant staples like tofu.',
+    targetCarbAnalysis: 'Balanced at 54% using unprocessed whole grains, vegetables, and legumes.',
+    targetFatAnalysis: 'Kept at 28% from dairy, eggs, oils, and nuts.',
+    primaryWarning: '⚠️ Bioavailability Notes: Lacto-ovo vegetarians should monitor zinc and iron levels, as phytates in whole grains can inhibit absorption.',
+    clinicalStudyCitation: 'Marsh, K. A. et al. (2012). "Health Implications of a Vegetarian Diet." American Journal of Lifestyle Medicine, 6(3).',
+    clinicalExplanation: 'Vegetarian diets are associated with lower blood pressure, improved lipid profiles, and a significantly reduced risk of type 2 diabetes.'
+  },
+  'Paleo': {
+    title: 'Paleolithic Evolutionary Science',
+    targetProteinAnalysis: 'Set at a robust 28% utilizing high-quality lean meats and wild-caught fish.',
+    targetCarbAnalysis: 'Set at 30% obtained strictly from non-grain sources: root vegetables, berries, and green vegetables.',
+    targetFatAnalysis: 'Set at 42% from healthy seed oils, coconut, nuts, and animal fats.',
+    primaryWarning: '⚠️ Calcium Restriction Care: Because all dairy products are excluded, monitor calcium levels. Consume ample bone-in canned sardines, almonds, and leafy greens.',
+    clinicalStudyCitation: 'Lindeberg, S. et al. (2007). "A Paleolithic Diet Confers Higher Insulin Sensitivity than a Mediterranean-like Diet." Diabetologia, 50(9).',
+    clinicalExplanation: 'The exclusion of processed foods, refined sugars, and grains leads to higher satiety and significant improvements in insulin sensitivity and glucose tolerance.'
+  },
+  'Gluten Free': {
+    title: 'Celiac & Gluten-Sensitivity Guidelines',
+    targetProteinAnalysis: 'Set at 20% to support muscular maintenance and metabolic function.',
+    targetCarbAnalysis: 'Balanced at 50% using gluten-free whole grains (quinoa, brown rice, buckwheat) and potatoes.',
+    targetFatAnalysis: 'Maintained at a healthy 30% level.',
+    primaryWarning: '⚠️ Ultra-Processed GF Food Danger: Many commercial gluten-free alternatives replace gluten with simple starches, sugars, and extra fat, making them nutritionally inferior and low in fiber.',
+    clinicalStudyCitation: 'Gaesser, G. A., & Angadi, S. S. (2012). "Gluten-Free Diet: Implication for Appetite and Weight Loss." Journal of the Academy of Nutrition and Dietetics, 112(8).',
+    clinicalExplanation: 'Gluten-free diets are essential for individuals with celiac disease or non-celiac gluten sensitivity. Focus on naturally gluten-free whole foods rather than packaged GF treats.'
+  },
+  'Normal': {
+    title: 'Standard Balanced Macronutrient Guidelines',
+    targetProteinAnalysis: 'Balanced at 20% of total calories, supporting general cellular repair, immune response, and daily maintenance.',
+    targetCarbAnalysis: 'Balanced at 50% of total energy, supporting active glucose requirements for brain and muscle metabolism.',
+    targetFatAnalysis: 'Maintained at 30% of total calories to facilitate absorption of fat-soluble vitamins (A, D, E, K).',
+    primaryWarning: '⚠️ General Balance Care: Focus on limiting added sugars to under 10% of total calories, and consume at least 25g (women) to 38g (men) of total dietary fiber per day.',
+    clinicalStudyCitation: 'U.S. Department of Agriculture (USDA). (2020). "Dietary Guidelines for Americans 2020-2025."',
+    clinicalExplanation: 'The standard balanced split minimizes nutritional deficiency risk, maximizes food-source flexibility, and is the most sustainable baseline for long-term weight management.'
+  }
+};
+
 export default function App() {
   // Application language is always English
   const appLanguage = 'en';
@@ -801,6 +911,14 @@ export default function App() {
         calculatedDailyFat = Math.round((calculatedDailyCalories * 0.30) / 9);
         calculatedDailyCarbs = Math.round((calculatedDailyCalories * 0.50) / 4);
         break;
+    }
+    
+    // Cap protein intake at a safe, practical maximum of 180g (as requested by user)
+    // Surplus calories are converted to carbohydrates (both are 4 kcal/gram) to preserve the exact calorie target
+    if (calculatedDailyProtein > 180) {
+      const surplusGrams = calculatedDailyProtein - 180;
+      calculatedDailyProtein = 180;
+      calculatedDailyCarbs += surplusGrams;
     }
     
     setTargetDailyCalories(calculatedDailyCalories);
@@ -1010,6 +1128,10 @@ export default function App() {
 
   // Main UI Tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'planner' | 'pantry' | 'cart'>('dashboard');
+
+  const [recommendationCardTab, setRecommendationCardTab] = useState<'rec' | 'research'>('rec');
+  const [viewDietResearchKey, setViewDietResearchKey] = useState<string>('Normal');
+  const [isRefreshingShoppingList, setIsRefreshingShoppingList] = useState(false);
 
   // Optimization priority
   const [priority, setPriority] = useState<'cheapest' | 'healthiest' | 'highest_protein' | 'fastest_cooking'>('highest_protein');
@@ -1546,6 +1668,141 @@ export default function App() {
     document.body.removeChild(link);
   };
 
+  // Regenerate/Refresh shopping list from current meal plan & diet rules
+  const handleRefreshShoppingList = async () => {
+    setIsRefreshingShoppingList(true);
+    const activeOnb = onboarding || tempOnboarding;
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            id: 'system-list-refresh',
+            sender: 'user',
+            text: `Please completely regenerate, recalculate, and optimize my active shopping list items to perfectly align with my current diet type (${activeOnb?.dietType}), food allergies (${activeOnb?.foodAllergies?.join(', ') || 'none'}), dislikes (${activeOnb?.foodsDislike?.join(', ') || 'none'}), and budget constraints (${activeOnb?.budget} ${activeOnb?.currency}). Keep it fully integrated with our active daily meal plan recipes.`
+          }],
+          onboarding: activeOnb,
+          customPrompt: "Regenerate the optimal shopping list"
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.shoppingList) {
+          setShoppingList(result.shoppingList);
+          if (result.budgetAnalysis && result.budgetAnalysis.suggestions) {
+            setBudgetSuggestions(result.budgetAnalysis.suggestions);
+          }
+          setIsRefreshingShoppingList(false);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("AI Shopping list refresh fetch failed, falling back to client-side high-fidelity logic");
+    }
+
+    // Offline High-Fidelity Regeneration Fallback
+    setTimeout(() => {
+      const dietType = activeOnb?.dietType || 'Normal';
+      const allergies = activeOnb?.foodAllergies || [];
+      const dislikes = activeOnb?.foodsDislike || [];
+      
+      // 1. Gather all required ingredients from the active meal plan
+      const mealIngredients = [
+        ...(mealPlan?.breakfast?.shoppingIngredients || []),
+        ...(mealPlan?.lunch?.shoppingIngredients || []),
+        ...(mealPlan?.dinner?.shoppingIngredients || []),
+        ...(mealPlan?.snacks?.shoppingIngredients || []),
+      ];
+
+      // 2. Map ingredient strings to catalog products in FOOD_DATABASE, filtered by allergies/dislikes
+      const selectedProducts: FoodProduct[] = [];
+      const addedProductIds = new Set<string>();
+
+      // Helper to clean and match ingredients
+      const matchProduct = (ingName: string) => {
+        const norm = ingName.toLowerCase();
+        
+        // Find a product that contains this ingredient or vice versa
+        return FOOD_DATABASE.find(p => {
+          if (isAllergicOrDisliked(p, allergies, dislikes)) return false;
+          
+          const pNameLower = p.name.toLowerCase();
+          const pCategoryLower = p.category.toLowerCase();
+          const pIngLower = (p.ingredients || '').toLowerCase();
+          
+          return pNameLower.includes(norm) || 
+                 norm.includes(pNameLower) || 
+                 pIngLower.includes(norm) ||
+                 (norm.includes('pui') && pNameLower.includes('pui')) ||
+                 (norm.includes('ou') && pNameLower.includes('ou')) ||
+                 (norm.includes('ovăz') && pNameLower.includes('ovăz')) ||
+                 (norm.includes('iaurt') && pNameLower.includes('iaurt')) ||
+                 (norm.includes('legume') && pNameLower.includes('legume')) ||
+                 (norm.includes('unt de arahide') && pNameLower.includes('arahide')) ||
+                 (norm.includes('tofu') && pNameLower.includes('tofu')) ||
+                 (norm.includes('fructe') && pNameLower.includes('fructe')) ||
+                 (norm.includes('somon') && pNameLower.includes('somon'));
+        });
+      };
+
+      mealIngredients.forEach(ing => {
+        const match = matchProduct(ing);
+        if (match && !addedProductIds.has(match.id)) {
+          selectedProducts.push(match);
+          addedProductIds.add(match.id);
+        }
+      });
+
+      // 3. If the resulting list is too small, add standard safe staples for the diet type
+      if (selectedProducts.length < 4) {
+        FOOD_DATABASE.forEach(p => {
+          if (selectedProducts.length >= 7) return;
+          if (addedProductIds.has(p.id)) return;
+          if (isAllergicOrDisliked(p, allergies, dislikes)) return;
+
+          // Check diet compatibility
+          if (dietType === 'Keto' && p.carbs > 8) return;
+          if (dietType === 'Vegan' && (p.category.includes('Meat') || p.category.includes('Dairy') || p.name.includes('ouă') || p.name.includes('Egg') || p.name.includes('pui') || p.name.includes('somon'))) return;
+          if (dietType === 'Vegetarian' && (p.category.includes('Meat') || p.name.includes('pui') || p.name.includes('somon'))) return;
+          if (dietType === 'Gluten Free' && (p.name.includes('pâine') || p.name.includes('wheat') || p.name.includes('paste') || p.name.includes('făină'))) return;
+
+          selectedProducts.push(p);
+          addedProductIds.add(p.id);
+        });
+      }
+
+      // 4. Convert into ShoppingItem array
+      const freshItems: ShoppingItem[] = selectedProducts.map(product => {
+        // Set standard initial quantity
+        let initialQty = 1;
+        // If it's something consumed in larger quantities, maybe 2
+        if (product.name.toLowerCase().includes('iaurt') || product.name.toLowerCase().includes('banane')) {
+          initialQty = 2;
+        }
+        return {
+          product,
+          quantity: initialQty,
+          totalCost: product.price * initialQty,
+          consumeType: 'daily'
+        };
+      });
+
+      // 5. Apply metrics and update state
+      setShoppingList(recalculateShoppingListMetrics(freshItems));
+      
+      // Sync a beautiful success notification/log
+      setBudgetSuggestions(prev => [
+        `Successfully refreshed and synchronized shopping list items with your active ${dietType} diet!`,
+        ...prev.slice(0, 3)
+      ]);
+
+      setIsRefreshingShoppingList(false);
+    }, 600);
+  };
+
   // Initial prompt setup helper
   const handleQuickOptimize = (goalStr: string) => {
     setActiveTab('chat');
@@ -1791,6 +2048,7 @@ export default function App() {
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-medium text-slate-800"
                       >
                         <option value="RON">Romanian Leu (RON, lei)</option>
+                        <option value="MDL">Moldovan Leu (MDL, MDL)</option>
                         <option value="USD">US Dollar (USD, $)</option>
                         <option value="GBP">British Pound (GBP, £)</option>
                         <option value="EUR">Euro (EUR, €)</option>
@@ -2055,6 +2313,30 @@ export default function App() {
         "Bellarom": "Borges",
         "Myprotein": "Myprotein",
         "Primadonna": "Carbonell"
+      },
+      "Moldova": {
+        "Cămara Noastră": "Linella Produs",
+        "Sabin": "Sabin",
+        "Ocean Fish": "Ocean Fish",
+        "Nixe": "Nixe",
+        "CocoRico": "CocoRico",
+        "K-Classic": "K-Classic",
+        "Pilos": "Milbona",
+        "Covalact de Țară": "Covalact",
+        "Inedit": "Inedit",
+        "Crownfield": "Crownfield",
+        "Uncle Ben's": "Uncle Ben's",
+        "Vel Pitar": "Vel Pitar",
+        "Combino": "Combino",
+        "Freshona": "Freshona",
+        "Hortex": "Hortex",
+        "Chiquita": "Chiquita",
+        "Delhaize": "Delhaize",
+        "Green Grocer": "Green Grocer",
+        "Mcennedy": "Mcennedy",
+        "Bellarom": "Bellarom",
+        "Myprotein": "Myprotein",
+        "Primadonna": "Primadonna"
       }
     };
 
@@ -2343,7 +2625,16 @@ export default function App() {
                       OPTIMIZED TARGET: {targetDailyProtein * (onboarding?.planningFrequency === 'daily' ? 1 : onboarding?.planningFrequency === 'weekly' ? 7 : 30)}G PROTEIN, {onboarding?.budget} {onboarding?.currency} BUDGET
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button 
+                      onClick={handleRefreshShoppingList}
+                      disabled={isRefreshingShoppingList}
+                      className="text-xs bg-green-50 hover:bg-green-100 disabled:bg-slate-100 text-[#2E7D32] disabled:text-slate-400 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition cursor-pointer disabled:cursor-not-allowed border border-green-200/50"
+                      title="Regenerate shopping list from current meal plan & diet settings"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingShoppingList ? 'animate-spin' : ''}`} />
+                      {isRefreshingShoppingList ? 'Refreshing...' : 'Refresh List'}
+                    </button>
                     <button 
                       onClick={handleExportCSV}
                       className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition"
@@ -2404,7 +2695,11 @@ export default function App() {
                         <th className="text-center pb-3 pt-3 font-semibold text-slate-500">Consume Type</th>
                         <th className="text-center pb-3 pt-3 pr-4 font-semibold text-slate-500">Qty</th>
                         <th className="text-right pb-3 pt-3 font-semibold text-slate-500">Protein/100g</th>
-                        <th className="text-right pb-3 pt-3 font-semibold text-slate-500">Price</th>
+                        <th className="text-right pb-3 pt-3 font-semibold text-slate-500">
+                          <span className="inline-flex items-center gap-0.5 cursor-help" title="Crowdsourced online store estimates. Actual prices can differ slightly based on local supermarket promotions.">
+                            Price <span className="text-amber-500 font-bold">*</span>
+                          </span>
+                        </th>
                         <th className="text-center pb-3 pt-3 font-semibold text-slate-500">Smart Swap</th>
                         <th className="pb-3 pt-3 pr-4"></th>
                       </tr>
@@ -2487,7 +2782,12 @@ export default function App() {
                             </div>
                           </td>
                           <td className="py-4 text-right font-mono font-semibold text-slate-700">{item.product.protein}g</td>
-                          <td className="py-4 text-right font-bold text-[#2E7D32]">{formatPrice(item.totalCost)}</td>
+                          <td className="py-4 text-right font-bold text-[#2E7D32]">
+                            <span className="inline-flex items-center gap-0.5 cursor-help" title="Indicative estimated store price. Actual shelf price may vary.">
+                              {formatPrice(item.totalCost)}
+                              <span className="text-slate-400 text-[10px] font-semibold">*</span>
+                            </span>
+                          </td>
                           <td className="py-4 text-center">
                             {item.product.alternatives.length > 0 ? (
                               <button
@@ -2526,6 +2826,16 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Price accuracy alert banner */}
+                <div className="mt-4 flex items-start gap-2.5 bg-amber-50/60 border border-amber-100 p-3.5 rounded-2xl text-xs text-amber-800 font-medium leading-relaxed shadow-sm">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-amber-900 mb-0.5 text-[11px] uppercase tracking-wide">⚠️ Price Accuracy Notice</span>
+                    Store prices listed here are averages collected from local supermarket indexes. Shelf prices might differ slightly based on your specific branch location, active regional catalogs, and ongoing in-store clearance promotions.
+                  </div>
+                </div>
+
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-4">
@@ -3076,49 +3386,123 @@ export default function App() {
             </div>
 
             {/* Clinical Diet Recommendation Card */}
-            <div id="clinical-diet-recommendation" className="lg:col-span-4 bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between min-h-[220px] shadow-sm">
+            <div id="clinical-diet-recommendation" className="lg:col-span-4 bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between min-h-[380px] shadow-sm">
               <div>
-                <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-[#4CAF50]" />
-                  AI Recommended Diet
-                </h3>
-                {(() => {
-                  const activeOnb = onboarding || tempOnboarding;
-                  const rec = getRecommendedDiet(activeOnb.age, activeOnb.weight, activeOnb.height);
-                  const isActive = activeOnb.dietType === rec.diet;
-                  return (
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center bg-[#4CAF50]/5 border border-[#4CAF50]/10 p-3 rounded-2xl">
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold block uppercase leading-none mb-1">Recommended Structure</span>
-                          <span className="text-sm font-black text-[#2E7D32]">{rec.diet} Diet</span>
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#4CAF50]" />
+                    Dietary Science
+                  </h3>
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-black">
+                    <button
+                      onClick={() => setRecommendationCardTab('rec')}
+                      className={`px-2 py-1 rounded-md transition ${recommendationCardTab === 'rec' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      AI Match
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRecommendationCardTab('research');
+                        const activeOnb = onboarding || tempOnboarding;
+                        if (activeOnb?.dietType) {
+                          setViewDietResearchKey(activeOnb.dietType);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded-md transition ${recommendationCardTab === 'research' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      Research
+                    </button>
+                  </div>
+                </div>
+
+                {recommendationCardTab === 'rec' ? (
+                  (() => {
+                    const activeOnb = onboarding || tempOnboarding;
+                    const rec = getRecommendedDiet(activeOnb.age, activeOnb.weight, activeOnb.height);
+                    const isActive = activeOnb.dietType === rec.diet;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center bg-[#4CAF50]/5 border border-[#4CAF50]/10 p-3 rounded-2xl">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase leading-none mb-1">Recommended Structure</span>
+                            <span className="text-sm font-black text-[#2E7D32]">{rec.diet} Diet</span>
+                          </div>
+                          {isActive ? (
+                            <span className="bg-[#4CAF50] text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1 shrink-0">
+                              ★ Active
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setOnboarding(prev => prev ? { ...prev, dietType: rec.diet as any } : null);
+                                setShoppingList(prev => recalculateShoppingListMetrics(prev.items, { ...activeOnb, dietType: rec.diet as any }));
+                              }}
+                              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-xl transition active:scale-95 shrink-0 shadow-sm"
+                            >
+                              Apply Diet
+                            </button>
+                          )}
                         </div>
-                        {isActive ? (
-                          <span className="bg-[#4CAF50] text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1 shrink-0">
-                            ★ Active
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setOnboarding(prev => prev ? { ...prev, dietType: rec.diet as any } : null);
-                              setShoppingList(prev => recalculateShoppingListMetrics(prev.items, { ...activeOnb, dietType: rec.diet as any }));
-                            }}
-                            className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-xl transition active:scale-95 shrink-0 shadow-sm"
-                          >
-                            Apply Diet
-                          </button>
-                        )}
+                        <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                          {rec.reason}
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                        {rec.reason}
-                      </p>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()
+                ) : (
+                  (() => {
+                    const profile = DIET_RESEARCH_DATABASE[viewDietResearchKey] || DIET_RESEARCH_DATABASE['Normal'];
+                    return (
+                      <div className="space-y-3.5 text-slate-700">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-black uppercase text-slate-400">Diet to Research:</span>
+                          <select
+                            value={viewDietResearchKey}
+                            onChange={(e) => setViewDietResearchKey(e.target.value)}
+                            className="bg-slate-50 border border-slate-200 text-xs font-bold rounded-xl px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 text-slate-700"
+                          >
+                            {Object.keys(DIET_RESEARCH_DATABASE).map(k => (
+                              <option key={k} value={k}>{k}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl">
+                          <h4 className="text-xs font-black text-slate-800">{profile.title}</h4>
+                          <p className="text-[9px] text-slate-400 font-medium italic mt-0.5 leading-tight">
+                            Study: {profile.clinicalStudyCitation}
+                          </p>
+                          <p className="text-[11px] text-slate-500 leading-relaxed mt-2 font-medium">
+                            {profile.clinicalExplanation}
+                          </p>
+                        </div>
+
+                        <div className="space-y-2 text-[11px]">
+                          <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100/50">
+                            <strong className="text-emerald-800 font-black block text-[10px] uppercase">Protein Guidance</strong>
+                            <p className="text-slate-600 font-medium mt-0.5 leading-relaxed">{profile.targetProteinAnalysis}</p>
+                          </div>
+                          <div className="bg-blue-50/40 p-2.5 rounded-xl border border-blue-100/50">
+                            <strong className="text-blue-800 font-black block text-[10px] uppercase">Carbohydrate Guidance</strong>
+                            <p className="text-slate-600 font-medium mt-0.5 leading-relaxed">{profile.targetCarbAnalysis}</p>
+                          </div>
+                          <div className="bg-amber-50/40 p-2.5 rounded-xl border border-amber-100/50">
+                            <strong className="text-amber-800 font-black block text-[10px] uppercase">Fat Guidance</strong>
+                            <p className="text-slate-600 font-medium mt-0.5 leading-relaxed">{profile.targetFatAnalysis}</p>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[10.5px] text-amber-900 font-semibold leading-relaxed">
+                          {profile.primaryWarning}
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
               </div>
               <div className="border-t border-slate-100 mt-4 pt-4 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase">
                 <Info className="w-3.5 h-3.5 text-slate-400" />
-                Standard Clinical Normative Match
+                Medical Research Database Match
               </div>
             </div>
 
@@ -3194,6 +3578,48 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Popular Products Quick-Search Tags */}
+              <div className="flex flex-wrap gap-1.5 mb-5 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block w-full mb-1 pl-1">Popular Quick-Search Products:</span>
+                {[
+                  { name: 'Chicken Breast 🍗', query: 'chicken' },
+                  { name: 'Eggs 🥚', query: 'egg' },
+                  { name: 'Greek Yogurt 🥛', query: 'yogurt' },
+                  { name: 'Salmon Fillet 🐟', query: 'salmon' },
+                  { name: 'Oatmeal 🥣', query: 'oats' },
+                  { name: 'Basmati Rice 🌾', query: 'rice' },
+                  { name: 'Tofu 🧊', query: 'tofu' },
+                  { name: 'Frozen Veggies 🥦', query: 'veggies' },
+                  { name: 'Bananas 🍌', query: 'banana' },
+                  { name: 'Peanut Butter 🥜', query: 'butter' },
+                  { name: 'Beef Steak 🥩', query: 'beef' },
+                  { name: 'Protein Powder 🍼', query: 'protein' },
+                  { name: 'Sweet Potatoes 🍠', query: 'potato' },
+                  { name: 'Almond Milk 🥛', query: 'milk' },
+                  { name: 'Canned Tuna 🐟', query: 'tuna' },
+                  { name: 'Fresh Broccoli 🥦', query: 'broccoli' },
+                  { name: 'Spinach 🍃', query: 'spinach' },
+                  { name: 'Avocados 🥑', query: 'avocado' },
+                  { name: 'Whole Bread 🍞', query: 'bread' },
+                  { name: 'Cottage Cheese 🧀', query: 'cheese' }
+                ].map(item => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      setSearchQuery(item.query);
+                      setCatalogLimit(12);
+                    }}
+                    className={`text-[10px] font-black px-2.5 py-1 rounded-xl transition cursor-pointer border ${
+                      searchQuery.toLowerCase() === item.query.toLowerCase()
+                        ? 'bg-[#2E7D32] text-white border-[#2E7D32] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200/60 hover:border-slate-400 hover:text-slate-800'
+                    }`}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+
               {(() => {
                 const filtered = searchProducts(searchQuery || 'chicken')
                   .filter(p => {
@@ -3233,7 +3659,10 @@ export default function App() {
                           </div>
 
                           <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                            <span className="text-sm font-black text-[#2E7D32]">{formatPrice(p.price)}</span>
+                            <span className="text-sm font-black text-[#2E7D32] inline-flex items-center gap-0.5 cursor-help" title="Indicative web price. Actual shelf prices in supermarket branches may vary.">
+                              {formatPrice(p.price)}
+                              <span className="text-slate-400 text-[10px] font-semibold">*</span>
+                            </span>
                             <button 
                               onClick={() => handleAddProductToList(p)}
                               className="text-[10px] bg-[#4CAF50] text-white hover:bg-[#2E7D32] font-black uppercase tracking-wider py-1 px-3 rounded-xl transition shadow-sm cursor-pointer"
@@ -3254,6 +3683,13 @@ export default function App() {
                         </button>
                       </div>
                     )}
+
+                    {/* Catalog disclaimer */}
+                    <div className="mt-6 flex justify-center">
+                      <p className="text-[10px] text-slate-400 font-semibold text-center italic">
+                        * Store prices are indexed periodically. 100% real-time in-store accuracy is not guaranteed.
+                      </p>
+                    </div>
                   </>
                 );
               })()}
@@ -3849,6 +4285,7 @@ export default function App() {
                             className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800"
                           >
                             <option value="RON">Romanian Leu (RON, lei)</option>
+                            <option value="MDL">Moldovan Leu (MDL, MDL)</option>
                             <option value="USD">US Dollar (USD, $)</option>
                             <option value="GBP">British Pound (GBP, £)</option>
                             <option value="EUR">Euro (EUR, €)</option>
@@ -3976,7 +4413,11 @@ export default function App() {
                           <th className="text-left pb-3 pt-3 font-semibold text-slate-500">Product</th>
                           <th className="text-left pb-3 pt-3 font-semibold text-slate-500">Supermarket</th>
                           <th className="text-center pb-3 pt-3 font-semibold text-slate-500">Qty</th>
-                          <th className="text-right pb-3 pt-3 font-semibold text-slate-500">Price</th>
+                          <th className="text-right pb-3 pt-3 font-semibold text-slate-500">
+                            <span className="inline-flex items-center gap-0.5 cursor-help" title="Indicative prices only. In-store prices may vary.">
+                              Price <span className="text-amber-500 font-bold">*</span>
+                            </span>
+                          </th>
                           <th className="pb-3 pt-3 pr-4 w-12"></th>
                         </tr>
                       </thead>
@@ -4030,7 +4471,10 @@ export default function App() {
                                 </div>
                               </td>
                               <td className="py-4 text-right font-bold text-[#2E7D32]">
-                                {formatPriceLocal(localItemPrice)}
+                                <span className="inline-flex items-center gap-0.5 cursor-help" title="Indicative estimated price. Local shelf price may vary.">
+                                  {formatPriceLocal(localItemPrice)}
+                                  <span className="text-slate-400 text-[10px] font-semibold">*</span>
+                                </span>
                               </td>
                               <td className="py-4 text-right pr-4">
                                 <button

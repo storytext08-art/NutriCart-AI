@@ -55,6 +55,21 @@ const COUNTRIES: Record<string, {
       'Mega Image': 'Mega Image'
     }
   },
+  "Moldova": {
+    name: "Moldova",
+    currency: "MDL",
+    currencySymbol: "MDL",
+    rate: 3.84,
+    stores: ['Linella', 'Metro', 'Nr1', 'Kaufland'],
+    storeMap: {
+      'Lidl': 'Linella',
+      'Kaufland': 'Kaufland',
+      'Carrefour': 'Nr1',
+      'Metro': 'Metro',
+      'Auchan': 'Linella',
+      'Mega Image': 'Nr1'
+    }
+  },
   "United States": {
     name: "United States",
     currency: "USD",
