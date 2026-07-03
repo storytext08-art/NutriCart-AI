@@ -1030,21 +1030,21 @@ export default function App() {
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number>(1);
   const [tempOnboarding, setTempOnboarding] = useState<OnboardingData>({
-    age: 24,
-    gender: 'male',
-    height: 180,
-    weight: 78,
-    goal: 'gain_muscle',
-    activityLevel: 'moderately_active',
-    preferredStores: ['Lidl', 'Kaufland'],
+    age: 0,
+    gender: '',
+    height: 0,
+    weight: 0,
+    goal: '',
+    activityLevel: '',
+    preferredStores: [],
     country: 'Romania',
     currency: 'lei',
-    budget: 350,
+    budget: 0,
     foodAllergies: [],
     foodsDislike: [],
-    foodsLove: ['chicken', 'oats', 'peanut butter'],
-    dietType: 'High Protein',
-    planningFrequency: 'weekly'
+    foodsLove: [],
+    dietType: '',
+    planningFrequency: ''
   });
 
 
@@ -1500,12 +1500,26 @@ export default function App() {
 
   // Handle skip/demo onboarding
   const skipOnboarding = () => {
-    setOnboarding(tempOnboarding);
+    const validatedOnboarding: OnboardingData = {
+      ...tempOnboarding,
+      age: tempOnboarding.age || 24,
+      height: tempOnboarding.height || 180,
+      weight: tempOnboarding.weight || 78,
+      budget: tempOnboarding.budget || 350
+    };
+    setOnboarding(validatedOnboarding);
   };
 
   const handleOnboardingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setOnboarding(tempOnboarding);
+    const validatedOnboarding: OnboardingData = {
+      ...tempOnboarding,
+      age: tempOnboarding.age || 24,
+      height: tempOnboarding.height || 180,
+      weight: tempOnboarding.weight || 78,
+      budget: tempOnboarding.budget || 350
+    };
+    setOnboarding(validatedOnboarding);
   };
 
   // Call API chat model
@@ -1809,7 +1823,24 @@ export default function App() {
     sendChatMessage(goalStr);
   };
 
+  const isStep1Valid = tempOnboarding.age > 0 &&
+                       tempOnboarding.gender !== '' &&
+                       tempOnboarding.height > 0 &&
+                       tempOnboarding.weight > 0 &&
+                       tempOnboarding.activityLevel !== '';
 
+  const isStep2Valid = tempOnboarding.goal !== '' &&
+                       tempOnboarding.dietType !== '';
+
+  const isStep3Valid = tempOnboarding.budget > 0 &&
+                       tempOnboarding.planningFrequency !== '' &&
+                       tempOnboarding.preferredStores.length > 0;
+
+  const isCurrentStepValid = onboardingStep === 1 
+    ? isStep1Valid 
+    : onboardingStep === 2 
+    ? isStep2Valid 
+    : isStep3Valid;
 
   // If onboarding is not completed, show the beautiful step-by-step form
   if (!onboarding) {
@@ -1831,13 +1862,6 @@ export default function App() {
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <button 
-              id="skip-onboarding-btn"
-              onClick={skipOnboarding}
-              className="text-xs font-bold text-[#4CAF50] hover:text-[#2E7D32] bg-green-50 px-3 py-1.5 rounded-lg transition"
-            >
-              {dict.skipOnboarding}
-            </button>
           </div>
         </header>
 
@@ -1856,47 +1880,48 @@ export default function App() {
                 <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{dict.physicalProfileDesc}</p>
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.age}</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.age} <span className="text-red-500 font-bold">*</span></label>
                     <input 
                       type="number" 
-                      value={tempOnboarding.age}
+                      value={tempOnboarding.age === 0 ? '' : tempOnboarding.age}
                       onChange={e => setTempOnboarding({ ...tempOnboarding, age: parseInt(e.target.value) || 0 })}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none" 
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.gender}</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.gender} <span className="text-red-500 font-bold">*</span></label>
                     <select 
                       value={tempOnboarding.gender}
                       onChange={e => setTempOnboarding({ ...tempOnboarding, gender: e.target.value as any })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-medium text-slate-800"
                     >
+                      <option value="" disabled hidden>Choose Gender</option>
                       <option value="male">{dict.genderMale}</option>
                       <option value="female">{dict.genderFemale}</option>
                       <option value="other">{dict.genderOther}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.height}</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.height} <span className="text-red-500 font-bold">*</span></label>
                     <input 
                       type="number" 
-                      value={tempOnboarding.height}
+                      value={tempOnboarding.height === 0 ? '' : tempOnboarding.height}
                       onChange={e => setTempOnboarding({ ...tempOnboarding, height: parseInt(e.target.value) || 0 })}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none" 
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.weight}</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.weight} <span className="text-red-500 font-bold">*</span></label>
                     <input 
                       type="number" 
-                      value={tempOnboarding.weight}
+                      value={tempOnboarding.weight === 0 ? '' : tempOnboarding.weight}
                       onChange={e => setTempOnboarding({ ...tempOnboarding, weight: parseInt(e.target.value) || 0 })}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none" 
                     />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.activityLevel}</label>
+                  <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.activityLevel} <span className="text-red-500 font-bold">*</span></label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[
                       { key: 'sedentary', label: dict.sedentary, desc: 'Little to no exercise' },
@@ -1952,7 +1977,7 @@ export default function App() {
                   })()}
 
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.targetGoal}</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.targetGoal} <span className="text-red-500 font-bold">*</span></label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
                         { key: 'lose_weight', label: dict.goalLose, desc: 'High calorie deficit' },
@@ -1974,7 +1999,7 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.dietPreset}</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.dietPreset} <span className="text-red-500 font-bold">*</span></label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {['Normal', 'Vegetarian', 'Vegan', 'Keto', 'Paleo', 'Mediterranean', 'High Protein', 'Low Carb', 'Gluten Free'].map(diet => {
                         const rec = getRecommendedDiet(tempOnboarding.age, tempOnboarding.weight, tempOnboarding.height);
@@ -2058,11 +2083,11 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.budgetLimit}</label>
+                      <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.budgetLimit} <span className="text-red-500 font-bold">*</span></label>
                       <div className="relative">
                         <input 
                           type="number" 
-                          value={tempOnboarding.budget}
+                          value={tempOnboarding.budget === 0 ? '' : tempOnboarding.budget}
                           onChange={e => setTempOnboarding({ ...tempOnboarding, budget: parseInt(e.target.value) || 0 })}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none pr-12 sm:pr-14" 
                         />
@@ -2070,12 +2095,13 @@ export default function App() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.planningPeriod}</label>
+                      <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.planningPeriod} <span className="text-red-500 font-bold">*</span></label>
                       <select
                         value={tempOnboarding.planningFrequency}
                         onChange={e => setTempOnboarding({ ...tempOnboarding, planningFrequency: e.target.value as any })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-medium text-slate-800"
                       >
+                        <option value="" disabled hidden>Choose Period</option>
                         <option value="daily">{dict.planningDaily}</option>
                         <option value="weekly">{dict.planningWeekly}</option>
                         <option value="monthly">{dict.planningMonthly}</option>
@@ -2084,7 +2110,7 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.preferredStores} ({tempOnboarding.country || 'Romania'})</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.preferredStores} ({tempOnboarding.country || 'Romania'}) <span className="text-red-500 font-bold">*</span></label>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                       {(COUNTRIES[tempOnboarding.country || 'Romania']?.stores || COUNTRIES['Romania'].stores).map(store => {
                         const isSelected = tempOnboarding.preferredStores.includes(store);
@@ -2133,6 +2159,13 @@ export default function App() {
               </div>
             )}
 
+            {!isCurrentStepValid && (
+              <div className="mt-6 p-3 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-2.5 text-xs text-rose-600 font-medium">
+                <span className="inline-flex w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                <span>Please fill in all required fields marked with an asterisk (<span className="font-bold text-rose-700">*</span>) to proceed.</span>
+              </div>
+            )}
+
             <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between">
               {onboardingStep > 1 ? (
                 <button 
@@ -2149,16 +2182,26 @@ export default function App() {
               {onboardingStep < 3 ? (
                 <button 
                   type="button" 
+                  disabled={!isCurrentStepValid}
                   onClick={() => setOnboardingStep(onboardingStep + 1)}
-                  className="bg-[#4CAF50] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-lg shadow-green-100 hover:bg-[#2E7D32] transition animate-pulse"
+                  className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition shadow-lg ${
+                    isCurrentStepValid 
+                      ? 'bg-[#4CAF50] text-white shadow-green-100 hover:bg-[#2E7D32] animate-pulse' 
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                  }`}
                 >
                   {dict.next}
                 </button>
               ) : (
                 <button 
                   type="button" 
+                  disabled={!isCurrentStepValid}
                   onClick={handleOnboardingSubmit}
-                  className="bg-[#2E7D32] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-lg shadow-green-200 hover:bg-[#1b4e20] transition"
+                  className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition shadow-lg ${
+                    isCurrentStepValid 
+                      ? 'bg-[#2E7D32] text-white shadow-green-200 hover:bg-[#1b4e20]' 
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                  }`}
                 >
                   {dict.submit}
                 </button>
@@ -2697,7 +2740,7 @@ export default function App() {
                         <th className="text-right pb-3 pt-3 font-semibold text-slate-500">Protein/100g</th>
                         <th className="text-right pb-3 pt-3 font-semibold text-slate-500">
                           <span className="inline-flex items-center gap-0.5 cursor-help" title="Crowdsourced online store estimates. Actual prices can differ slightly based on local supermarket promotions.">
-                            Price <span className="text-amber-500 font-bold">*</span>
+                            Approx. Price <span className="text-amber-500 font-bold">*</span>
                           </span>
                         </th>
                         <th className="text-center pb-3 pt-3 font-semibold text-slate-500">Smart Swap</th>
@@ -2784,7 +2827,7 @@ export default function App() {
                           <td className="py-4 text-right font-mono font-semibold text-slate-700">{item.product.protein}g</td>
                           <td className="py-4 text-right font-bold text-[#2E7D32]">
                             <span className="inline-flex items-center gap-0.5 cursor-help" title="Indicative estimated store price. Actual shelf price may vary.">
-                              {formatPrice(item.totalCost)}
+                              ~ {formatPrice(item.totalCost)}
                               <span className="text-slate-400 text-[10px] font-semibold">*</span>
                             </span>
                           </td>
@@ -4415,7 +4458,7 @@ export default function App() {
                           <th className="text-center pb-3 pt-3 font-semibold text-slate-500">Qty</th>
                           <th className="text-right pb-3 pt-3 font-semibold text-slate-500">
                             <span className="inline-flex items-center gap-0.5 cursor-help" title="Indicative prices only. In-store prices may vary.">
-                              Price <span className="text-amber-500 font-bold">*</span>
+                              Approx. Price <span className="text-amber-500 font-bold">*</span>
                             </span>
                           </th>
                           <th className="pb-3 pt-3 pr-4 w-12"></th>
@@ -4472,7 +4515,7 @@ export default function App() {
                               </td>
                               <td className="py-4 text-right font-bold text-[#2E7D32]">
                                 <span className="inline-flex items-center gap-0.5 cursor-help" title="Indicative estimated price. Local shelf price may vary.">
-                                  {formatPriceLocal(localItemPrice)}
+                                  ~ {formatPriceLocal(localItemPrice)}
                                   <span className="text-slate-400 text-[10px] font-semibold">*</span>
                                 </span>
                               </td>

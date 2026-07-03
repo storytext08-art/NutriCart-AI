@@ -1,10 +1,10 @@
 export interface OnboardingData {
   age: number;
-  gender: 'male' | 'female' | 'other';
+  gender: 'male' | 'female' | 'other' | '';
   height: number; // in cm
   weight: number; // in kg
-  goal: 'lose_weight' | 'gain_muscle' | 'maintain' | 'general_health';
-  activityLevel: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active';
+  goal: 'lose_weight' | 'gain_muscle' | 'maintain' | 'general_health' | '';
+  activityLevel: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | '';
   preferredStores: string[]; // e.g. Lidl, Kaufland, Carrefour, Metro, Auchan
   country: string;
   currency: string;
@@ -12,8 +12,8 @@ export interface OnboardingData {
   foodAllergies: string[];
   foodsDislike: string[];
   foodsLove: string[];
-  dietType: 'Normal' | 'Vegetarian' | 'Vegan' | 'Keto' | 'Paleo' | 'Mediterranean' | 'High Protein' | 'Low Carb' | 'Gluten Free';
-  planningFrequency: 'daily' | 'weekly' | 'monthly';
+  dietType: 'Normal' | 'Vegetarian' | 'Vegan' | 'Keto' | 'Paleo' | 'Mediterranean' | 'High Protein' | 'Low Carb' | 'Gluten Free' | '';
+  planningFrequency: 'daily' | 'weekly' | 'monthly' | '';
 }
 
 export interface FoodProduct {
