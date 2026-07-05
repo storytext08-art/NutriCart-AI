@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile, dietary goals, food log, cart items, pantry list, water tracking, and AI chat history.",
+      "type": "object",
+      "properties": {
+        "onboarding": {
+          "type": "object",
+          "description": "Onboarding data including dietary goals, country, and budget limits."
+        },
+        "waterAmount": {
+          "type": "number",
+          "description": "Daily water consumption in ml."
+        },
+        "streakDays": {
+          "type": "object",
+          "description": "Weekly streak tracker for budget and meal planning."
+        },
+        "shoppingList": {
+          "type": "object",
+          "description": "Active shopping list details and nutritional aggregates."
+        },
+        "mealPlan": {
+          "type": "object",
+          "description": "Active daily meal plans categorized by breakfast, lunch, dinner, snacks."
+        },
+        "budgetSuggestions": {
+          "type": "array",
+          "description": "Budget optimization insights and alerts."
+        },
+        "messages": {
+          "type": "array",
+          "description": "AI conversational history."
+        },
+        "pantryItems": {
+          "type": "array",
+          "description": "User's current pantry stock."
+        },
+        "cartItems": {
+          "type": "array",
+          "description": "Current cart items details."
+        },
+        "manualSpentAmount": {
+          "type": "number",
+          "description": "Amount spent by user manually."
+        },
+        "loggedFoods": {
+          "type": "array",
+          "description": "Logged foods for daily nutrition tracking."
+        },
+        "targetDailyCalories": {
+          "type": "number",
+          "description": "Calorie intake goal."
+        },
+        "targetDailyProtein": {
+          "type": "number",
+          "description": "Protein intake goal."
+        },
+        "targetDailyCarbs": {
+          "type": "number",
+          "description": "Carbohydrates intake goal."
+        },
+        "targetDailyFat": {
+          "type": "number",
+          "description": "Fat intake goal."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when user profile was last updated."
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Users personal data repository."
+    }
+  }
+}

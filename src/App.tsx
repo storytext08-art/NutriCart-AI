@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { auth, db, googleProvider } from './firebase';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup, 
+  signOut,
+  User as FirebaseUser,
+  updateProfile
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   Activity,
   Apple,
@@ -37,7 +48,11 @@ import {
   Settings,
   Sun,
   Moon,
-  AlertTriangle
+  AlertTriangle,
+  PlusCircle,
+  RotateCcw,
+  LogOut,
+  ArrowLeft
 } from 'lucide-react';
 import { OnboardingData, FoodProduct, ChatMessage, PantryItem, MealPlan, ShoppingItem } from './types';
 import { FOOD_DATABASE, searchProducts } from './foodDb';
@@ -304,6 +319,292 @@ export const MEAL_PRESETS_POOL: MealPlan[] = [
     }
   }
 ];
+
+export const getMealPlanForDiet = (dietType: string): MealPlan => {
+  switch (dietType) {
+    case 'Keto':
+      return {
+        breakfast: {
+          name: "Crispy Bacon & Avocado Eggs",
+          recipe: "Sizzle bacon in a pan, fry eggs in the rendered fat, serve with sliced avocado and seasoned sea salt.",
+          preparationSteps: [
+            "Cook 3 strips of smoked bacon in a skillet until extra crispy.",
+            "Remove bacon and crack 3 large organic eggs into the hot bacon fat.",
+            "Fry to desired doneness (sunny-side up recommended).",
+            "Slice 1 whole ripe avocado on a plate, top with salt, pepper, and olive oil.",
+            "Plate together and serve with fresh chives."
+          ],
+          cookingTime: "10 mins",
+          nutrition: { protein: 28, carbs: 4, fat: 42, calories: 510 },
+          shoppingIngredients: ["Bacon", "Eggs", "Avocado"]
+        },
+        lunch: {
+          name: "Keto Butter-Basted Ribeye & Asparagus",
+          recipe: "Sear seasoned ribeye steak in butter and garlic, pan-roast fresh asparagus alongside.",
+          preparationSteps: [
+            "Season a thick 250g ribeye steak with coarse salt and cracked pepper.",
+            "Sear in a piping hot cast-iron skillet for 3-4 mins per side.",
+            "Throw in 2 tablespoons of grass-fed butter, garlic cloves, and fresh rosemary.",
+            "Spoon melted butter over the steak continuously for 2 minutes.",
+            "Add 150g fresh asparagus to the pan for the last 3 minutes."
+          ],
+          cookingTime: "15 mins",
+          nutrition: { protein: 55, carbs: 3, fat: 48, calories: 660 },
+          shoppingIngredients: ["Beef Sirloin Steak", "Grass-Fed Butter", "Asparagus"]
+        },
+        dinner: {
+          name: "Zucchini Noodles with Creamy Pesto Salmon",
+          recipe: "Spiralize zucchini, sauté in olive oil, top with pan-seared wild salmon and creamy basil pesto.",
+          preparationSteps: [
+            "Spiralize 2 medium zucchinis into long 'zoodles'.",
+            "Pan-sear a 180g salmon fillet in olive oil for 4 mins skin-side down, flip for 3 mins.",
+            "Remove salmon, add zucchini noodles to the same pan and sauté for 2 mins.",
+            "Stir in 3 tablespoons of heavy whipping cream and 2 tablespoons of basil pesto.",
+            "Top noodles with the seared salmon and freshly grated parmesan."
+          ],
+          cookingTime: "12 mins",
+          nutrition: { protein: 38, carbs: 7, fat: 38, calories: 520 },
+          shoppingIngredients: ["Salmon Fillet", "Zucchini", "Basil Pesto", "Heavy Whipping Cream"]
+        },
+        snacks: {
+          name: "Salted Butter Coffee & Pecans",
+          recipe: "Blend hot black coffee with MCT oil and organic butter, serve with a handful of pecans.",
+          preparationSteps: [
+            "Brew 300ml of hot organic coffee.",
+            "Blend in a high-speed blender with 1 tbsp butter and 1 tbsp MCT or coconut oil until frothy.",
+            "Enjoy alongside 30g of toasted salted pecans."
+          ],
+          cookingTime: "4 mins",
+          nutrition: { protein: 4, carbs: 2, fat: 34, calories: 330 },
+          shoppingIngredients: ["Coffee Beans", "Grass-Fed Butter", "Pecans"]
+        }
+      };
+    case 'Vegan':
+      return {
+        breakfast: {
+          name: "Golden Turmeric Tofu Scramble Toast",
+          recipe: "Crumble firm tofu, sauté with turmeric, nutritional yeast, spinach, and serve on sourdough.",
+          preparationSteps: [
+            "Press 200g of firm tofu with a paper towel and crumble with your hands.",
+            "Heat 1 tbsp of olive oil in a skillet, add tofu, turmeric, and nutritional yeast.",
+            "Sauté for 5 mins, throwing in a handful of fresh baby spinach at the end.",
+            "Toast 2 slices of artisan sourdough bread.",
+            "Spoon the golden tofu scramble over toast and top with a pinch of black salt (kala namak)."
+          ],
+          cookingTime: "10 mins",
+          nutrition: { protein: 26, carbs: 38, fat: 12, calories: 360 },
+          shoppingIngredients: ["Tofu Clasic", "Sourdough Bread", "Spinach"]
+        },
+        lunch: {
+          name: "Tempeh Grain Bowl with Maple Tahini",
+          recipe: "Sauté marinated tempeh, serve on a bed of warm quinoa, steamed broccoli, and rich tahini dressing.",
+          preparationSteps: [
+            "Slice 150g of tempeh and sauté in a splash of tamari soy sauce and maple syrup.",
+            "Rinse and boil 80g of quinoa in vegetable broth.",
+            "Steam 150g of broccoli florets until bright green.",
+            "Whisk 2 tbsp of tahini paste, 1 tbsp lemon juice, and warm water for a smooth dressing.",
+            "Assemble quinoa, tempeh, broccoli, and pour tahini dressing on top."
+          ],
+          cookingTime: "20 mins",
+          nutrition: { protein: 34, carbs: 55, fat: 18, calories: 510 },
+          shoppingIngredients: ["Tempeh", "Quinoa", "Broccoli", "Tahini Paste"]
+        },
+        dinner: {
+          name: "Rich Mediterranean Lentil & Sweet Potato Stew",
+          recipe: "Simmer red lentils, cubed sweet potatoes, chopped tomatoes, and kale in a savory aromatic broth.",
+          preparationSteps: [
+            "Dice 1 onion and 2 garlic cloves, sauté in olive oil inside a pot.",
+            "Add 1 large cubed sweet potato and 100g of dry red lentils.",
+            "Pour in 400g of chopped canned tomatoes and 400ml of vegetable broth.",
+            "Simmer for 20 minutes until sweet potatoes are tender.",
+            "Fold in 50g of chopped kale and cook for 2 more minutes."
+          ],
+          cookingTime: "25 mins",
+          nutrition: { protein: 22, carbs: 74, fat: 5, calories: 430 },
+          shoppingIngredients: ["Red Lentils", "Sweet Potatoes", "Canned Tomatoes", "Kale"]
+        },
+        snacks: {
+          name: "Organic Peanut Butter & Banana Sourdough",
+          recipe: "Spread natural crunchy peanut butter on sourdough, layer with sweet organic banana slices.",
+          preparationSteps: [
+            "Toast 1 slice of whole wheat or sourdough bread.",
+            "Spread 2 tablespoons of 100% natural peanut butter.",
+            "Top with 1 sliced ripe organic banana and a sprinkle of chia seeds."
+          ],
+          cookingTime: "3 mins",
+          nutrition: { protein: 12, carbs: 34, fat: 16, calories: 320 },
+          shoppingIngredients: ["Peanut Butter", "Bananas", "Sourdough Bread"]
+        }
+      };
+    case 'Vegetarian':
+      return {
+        breakfast: {
+          name: "Avocado & Sunny Egg Sourdough Toast",
+          recipe: "Mash ripe avocado with lime, spread on sourdough, top with perfect sunny-side up eggs.",
+          preparationSteps: [
+            "Mash 1 half of a ripe avocado with lime juice, sea salt, and red pepper flakes.",
+            "Toast 2 thick slices of fresh sourdough bread.",
+            "Spread the avocado mash evenly on the toast.",
+            "Fry 2 organic eggs in a pan with olive oil until the whites are set but yolks remain runny.",
+            "Slide eggs onto the toast and garnish with microgreens."
+          ],
+          cookingTime: "8 mins",
+          nutrition: { protein: 22, carbs: 32, fat: 18, calories: 380 },
+          shoppingIngredients: ["Eggs", "Sourdough Bread", "Avocado"]
+        },
+        lunch: {
+          name: "Creamy Halloumi & Mediterranean Chickpea Bowl",
+          recipe: "Grill salty halloumi cheese slices, serve with seasoned chickpeas, cucumbers, and tomatoes.",
+          preparationSteps: [
+            "Sauté 100g of sliced halloumi cheese in a dry skillet until both sides are deeply golden.",
+            "Drain and rinse 200g of canned chickpeas, season with paprika, cumin, and lemon.",
+            "Chop 1 cucumber and a handful of juicy cherry tomatoes.",
+            "Assemble chickpeas, grilled halloumi, cucumbers, and tomatoes in a deep bowl.",
+            "Drizzle with cold-pressed extra virgin olive oil."
+          ],
+          cookingTime: "12 mins",
+          nutrition: { protein: 28, carbs: 42, fat: 24, calories: 500 },
+          shoppingIngredients: ["Halloumi Cheese", "Canned Chickpeas", "Cucumbers", "Tomatoes"]
+        },
+        dinner: {
+          name: "Fluffy Egg & Tofu Sauté with Brown Rice",
+          recipe: "Scramble whole eggs and tofu cubes in a pan with light soy sauce, serve over fiber-rich brown rice.",
+          preparationSteps: [
+            "Chop 150g of firm tofu into bite-sized cubes.",
+            "Whisk 2 eggs with a tablespoon of light soy sauce.",
+            "Sauté tofu in a hot non-stick pan with a tiny bit of butter for 4 mins.",
+            "Pour whisked eggs into the pan and stir gently until fluffy.",
+            "Serve on a bed of 120g hot cooked brown rice."
+          ],
+          cookingTime: "10 mins",
+          nutrition: { protein: 28, carbs: 46, fat: 15, calories: 430 },
+          shoppingIngredients: ["Eggs", "Tofu Clasic", "Brown Rice"]
+        },
+        snacks: {
+          name: "Greek Yogurt, Forest Berries & Walnut bowl",
+          recipe: "Top thick high-protein Greek yogurt with thawing wild berries and raw English walnuts.",
+          preparationSteps: [
+            "Spoon 250g of Greek yogurt 2% into a clean bowl.",
+            "Top with 80g of thawed frozen berries.",
+            "Garnish with 20g of chopped raw English walnuts and a splash of raw honey."
+          ],
+          cookingTime: "3 mins",
+          nutrition: { protein: 22, carbs: 18, fat: 10, calories: 250 },
+          shoppingIngredients: ["Greek Yogurt 2%", "Frozen Forest Berries", "Walnuts"]
+        }
+      };
+    case 'High Protein':
+      return {
+        breakfast: {
+          name: "Bodybuilder's Protein Oats & Whites",
+          recipe: "Cook rolled oats with water, stir in egg whites and premium whey protein isolate, top with berries.",
+          preparationSteps: [
+            "In a saucepan, simmer 80g oats in 250ml water for 3 mins.",
+            "Pour in 100ml liquid egg whites, stirring vigorously for 1 minute until creamy.",
+            "Remove from heat and stir in 1 scoop (30g) of vanilla whey protein isolate.",
+            "Top with 50g fresh blueberries and a tablespoon of natural peanut butter."
+          ],
+          cookingTime: "6 mins",
+          nutrition: { protein: 46, carbs: 58, fat: 10, calories: 510 },
+          shoppingIngredients: ["Oats", "Whey Protein", "Peanut Butter", "Eggs"]
+        },
+        lunch: {
+          name: "Seared Chicken Breast with Basmati & Broccoli",
+          recipe: "Pan-sear premium chicken breast, serve alongside steamed white Basmati rice and steamed broccoli.",
+          preparationSteps: [
+            "Season 220g clean chicken breast with sea salt, pepper, and garlic powder.",
+            "Pan-sear in a non-stick skillet with olive oil spray for 6 mins per side.",
+            "Boil 80g Basmati rice in salted water.",
+            "Steam 150g broccoli florets for 5 minutes.",
+            "Slice chicken breast and serve with rice and broccoli."
+          ],
+          cookingTime: "15 mins",
+          nutrition: { protein: 56, carbs: 64, fat: 5, calories: 530 },
+          shoppingIngredients: ["Chicken Breast", "Orez Basmati", "Broccoli"]
+        },
+        dinner: {
+          name: "Garlic Butter Steak Sirloin & Quinoa",
+          recipe: "Pan-sear tender sirloin steak, baste with garlic butter, serve with hot quinoa and spinach.",
+          preparationSteps: [
+            "Season a 200g lean sirloin steak generously with coarse salt.",
+            "Sear in a hot skillet for 3 mins per side, then baste with 1 tsp butter and minced garlic.",
+            "Boil 60g quinoa in salted water.",
+            "Sauté a large handful of fresh spinach in the remaining pan juices.",
+            "Slice steak and plate beautifully with quinoa and sautéed spinach."
+          ],
+          cookingTime: "12 mins",
+          nutrition: { protein: 48, carbs: 38, fat: 16, calories: 490 },
+          shoppingIngredients: ["Beef Sirloin Steak", "Quinoa", "Spinach", "Grass-Fed Butter"]
+        },
+        snacks: {
+          name: "Greek Yogurt, Raw Almonds & Honey bowl",
+          recipe: "Top 0% fat Greek yogurt with crunch almonds and a touch of raw organic honey.",
+          preparationSteps: [
+            "Spoon 250g fat-free Greek yogurt into a bowl.",
+            "Stir in 15g vanilla whey or sweeten with a teaspoon of raw honey.",
+            "Top with 25g raw whole almonds."
+          ],
+          cookingTime: "2 mins",
+          nutrition: { protein: 32, carbs: 16, fat: 12, calories: 300 },
+          shoppingIngredients: ["Greek Yogurt 2%", "Almonds", "Honey"]
+        }
+      };
+    case 'Gluten Free':
+      return {
+        breakfast: {
+          name: "Gluten-Free Seed & Fruit Oatmeal",
+          recipe: "Cook certified gluten-free oats, stir in chia seeds, flax seeds, and sliced sweet banana.",
+          preparationSteps: [
+            "Boil 80g of certified gluten-free rolled oats in 200ml almond milk.",
+            "Stir in 1 tablespoon of chia seeds and 1 tablespoon of ground flaxseed.",
+            "Simmer until thick, then top with half a sliced ripe banana and a splash of maple syrup."
+          ],
+          cookingTime: "5 mins",
+          nutrition: { protein: 14, carbs: 64, fat: 9, calories: 390 },
+          shoppingIngredients: ["Oats", "Bananas", "Almond Milk"]
+        },
+        lunch: {
+          name: "Crispy Salmon, Quinoa & Avocado Plate",
+          recipe: "Pan-sear fresh salmon fillet with crispy skin, serve with warm quinoa and sliced ripe avocado.",
+          preparationSteps: [
+            "Season a 160g skin-on salmon fillet with sea salt and dill.",
+            "Sear in a skillet skin-side down for 5 mins, flip and cook for 3 mins.",
+            "Rinse and boil 60g quinoa in salted water.",
+            "Plate quinoa, top with seared salmon, and serve with half a sliced avocado."
+          ],
+          cookingTime: "15 mins",
+          nutrition: { protein: 38, carbs: 44, fat: 22, calories: 530 },
+          shoppingIngredients: ["Salmon Fillet", "Quinoa", "Avocado"]
+        },
+        dinner: {
+          name: "Sautéed Beef Strips & Sweet Potato Fries",
+          recipe: "Stir-fry beef sirloin strips with colored bell peppers, serve with baked sweet potato fries.",
+          preparationSteps: [
+            "Cut 1 large sweet potato into thin wedges, toss with olive oil and bake at 200°C for 20 mins.",
+            "Slice 180g beef sirloin into thin strips.",
+            "Sauté beef in a hot pan with sliced bell peppers, onions, and gluten-free tamari sauce."
+          ],
+          cookingTime: "22 mins",
+          nutrition: { protein: 42, carbs: 48, fat: 12, calories: 470 },
+          shoppingIngredients: ["Beef Sirloin Steak", "Sweet Potatoes", "Ardei capia / Bell Peppers"]
+        },
+        snacks: {
+          name: "Rice Cakes with Almond Butter & Strawberries",
+          recipe: "Spread creamy almond butter on gluten-free brown rice cakes, top with sweet strawberry slices.",
+          preparationSteps: [
+            "Take 3 organic brown rice cakes.",
+            "Spread 1 tablespoon of smooth almond butter on each cake.",
+            "Top with sliced fresh strawberries."
+          ],
+          cookingTime: "3 mins",
+          nutrition: { protein: 8, carbs: 28, fat: 14, calories: 270 },
+          shoppingIngredients: ["Rice Cakes", "Peanut Butter", "Strawberries"]
+        }
+      };
+    default:
+      return MEAL_PRESETS_POOL[0];
+  }
+};
 
 export const TRANSLATIONS = {
   ro: {
@@ -970,6 +1271,15 @@ export default function App() {
         },
         ...prev
       ]);
+
+      // Automatically mark current day as checked in streak on successful log
+      const dayAbbreviations = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const currentDayName = dayAbbreviations[new Date().getDay()];
+      setStreakDays(prev => ({
+        ...prev,
+        [currentDayName]: true
+      }));
+
       setFoodInput('');
     } catch (err: any) {
       console.error(err);
@@ -1017,6 +1327,21 @@ export default function App() {
     return localStorage.getItem('theme') === 'dark';
   });
 
+  // Firebase Auth states
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [fullName, setFullName] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [authView, setAuthView] = useState<'choice' | 'login' | 'signup'>('choice');
+  const [isSignUp, setIsSignUp] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string>('');
+  const [authSubmitting, setAuthSubmitting] = useState<boolean>(false);
+
+  // Firestore sync state
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+
   useEffect(() => {
     if (isDarkMode) {
       document.body.classList.add('dark-theme');
@@ -1029,6 +1354,7 @@ export default function App() {
 
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number>(1);
+  const [hasExistingProfile, setHasExistingProfile] = useState<boolean>(false);
   const [tempOnboarding, setTempOnboarding] = useState<OnboardingData>({
     age: 0,
     gender: '',
@@ -1046,6 +1372,142 @@ export default function App() {
     dietType: '',
     planningFrequency: ''
   });
+
+  const activeCountry = onboarding?.country || tempOnboarding?.country || 'Romania';
+  const countryConfig = COUNTRIES[activeCountry] || COUNTRIES['Romania'];
+
+  function recalculateShoppingListMetrics(items: ShoppingItem[], customOnboarding?: OnboardingData) {
+    const activeOnboarding = customOnboarding || onboarding || tempOnboarding;
+    const dietType = activeOnboarding?.dietType || 'Normal';
+
+    const updatedItems = items.map(item => {
+      // Use the actual package price as requested (a person buys the product which will last for many days)
+      const totalCost = parseFloat((item.product.price * item.quantity).toFixed(2));
+
+      return {
+        ...item,
+        totalCost
+      };
+    });
+
+    const totalCost = updatedItems.reduce((acc, item) => acc + item.totalCost, 0);
+
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalCalories = 0;
+    let totalFiber = 0;
+
+    updatedItems.forEach(item => {
+      const portion = getStandardDailyPortion(item.product.name, dietType);
+      const consume = item.consumeType || 'daily';
+      
+      const consumedQty = consume === 'daily' ? portion.amount : portion.amount * 7;
+
+      const weightGrams = getWeightInGrams(item.product.weight);
+      const pieceCount = getProductPieceCount(item.product);
+      const packSize = portion.unit === 'pcs' ? pieceCount : weightGrams;
+
+      const purchasedQty = packSize * item.quantity;
+      const actualConsumedQty = Math.min(consumedQty, purchasedQty);
+
+      if (portion.unit === 'pcs') {
+        const estWeightPerPiece = item.product.name.toLowerCase().includes('ouă') || item.product.name.toLowerCase().includes('egg') ? 50 : 15;
+        const estWeightGrams = actualConsumedQty * estWeightPerPiece;
+        totalProtein += (item.product.protein * estWeightGrams) / 100;
+        totalCarbs += (item.product.carbs * estWeightGrams) / 100;
+        totalFat += (item.product.fat * estWeightGrams) / 100;
+        totalCalories += (item.product.calories * estWeightGrams) / 100;
+        totalFiber += ((item.product.fiber || 0) * estWeightGrams) / 100;
+      } else {
+        totalProtein += (item.product.protein * actualConsumedQty) / 100;
+        totalCarbs += (item.product.carbs * actualConsumedQty) / 100;
+        totalFat += (item.product.fat * actualConsumedQty) / 100;
+        totalCalories += (item.product.calories * actualConsumedQty) / 100;
+        totalFiber += ((item.product.fiber || 0) * actualConsumedQty) / 100;
+      }
+    });
+
+    const costPerProteinGram = totalProtein > 0 ? (totalCost * countryConfig.rate) / totalProtein : 0;
+    const costPerCalorie = totalCalories > 0 ? (totalCost * countryConfig.rate) / totalCalories : 0;
+    const avgHealthScore = updatedItems.length > 0 ? Math.round(updatedItems.reduce((acc, item) => acc + (Number(item.product.healthScore) || 75), 0) / updatedItems.length) : 85;
+
+    return {
+      items: updatedItems,
+      totalCost: parseFloat(totalCost.toFixed(2)),
+      totalProtein: Math.round(totalProtein),
+      totalCarbs: Math.round(totalCarbs),
+      totalFat: Math.round(totalFat),
+      totalCalories: Math.round(totalCalories),
+      totalFiber: Math.round(totalFiber),
+      costPerProteinGram: parseFloat(costPerProteinGram.toFixed(4)),
+      costPerCalorie: parseFloat(costPerCalorie.toFixed(4)),
+      avgHealthScore
+    };
+  }
+
+  function generateDefaultShoppingList(onb: OnboardingData) {
+    const dietType = onb.dietType || 'Normal';
+    const allergies = onb.foodAllergies || [];
+    const dislikes = onb.foodsDislike || [];
+    
+    // Find compatible products
+    const compatible = FOOD_DATABASE.filter(p => {
+      if (isAllergicOrDisliked(p, allergies, dislikes)) return false;
+      
+      // Diet checks
+      if (dietType === 'Keto' && p.carbs > 8) return false;
+      if (dietType === 'Vegan' && (p.category.includes('Meat') || p.category.includes('Dairy') || p.name.includes('ouă') || p.name.includes('Egg') || p.name.includes('pui') || p.name.includes('somon'))) return false;
+      if (dietType === 'Vegetarian' && (p.category.includes('Meat') || p.name.includes('pui') || p.name.includes('somon'))) return false;
+      if (dietType === 'Gluten Free' && (p.name.includes('pâine') || p.name.includes('wheat') || p.name.includes('paste') || p.name.includes('făină'))) return false;
+      
+      return true;
+    });
+
+    // To ensure fresh rotation on refresh, let's shuffle the high-quality compatible products
+    const highQuality = compatible.filter(p => p.healthScore >= 70);
+    const pool = highQuality.length >= 15 ? highQuality : compatible;
+    
+    // Simple Fisher-Yates shuffle
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const selected: ShoppingItem[] = [];
+    const categoriesUsed = new Set<string>();
+    
+    // Phase 1: Ensure category diversity by taking at most 1 product per category first
+    for (const p of shuffled) {
+      if (selected.length >= 10) break;
+      const cat = p.category || 'General';
+      if (!categoriesUsed.has(cat)) {
+        selected.push({
+          product: p,
+          quantity: 1,
+          consumeType: 'daily',
+          totalCost: p.price
+        });
+        categoriesUsed.add(cat);
+      }
+    }
+    
+    // Phase 2: Add more high-quality items to reach exactly 10 recommended items
+    for (const p of shuffled) {
+      if (selected.length >= 10) break;
+      if (!selected.some(item => item.product.id === p.id)) {
+        selected.push({
+          product: p,
+          quantity: 1,
+          consumeType: 'daily',
+          totalCost: p.price
+        });
+      }
+    }
+    
+    return recalculateShoppingListMetrics(selected, onb);
+  }
 
 
   // Automatically calculate default nutrient targets when onboarding is filled or changed
@@ -1066,11 +1528,30 @@ export default function App() {
     }
   }, [isSettingsModalOpen, onboarding]);
 
-  const handleSaveSettings = (updated: OnboardingData) => {
+  const handleSaveSettings = async (updated: OnboardingData) => {
     setOnboarding(updated);
     setIsSettingsModalOpen(false);
-    // Recalculate metrics for the shopping list with new target values
-    setShoppingList(prev => recalculateShoppingListMetrics(prev.items));
+    
+    // Regenerate list of 10 rotating products matching the new diet/budget
+    const updatedList = generateDefaultShoppingList(updated);
+    setShoppingList(updatedList);
+    
+    // Regenerate matching meal plan
+    const updatedPlan = getMealPlanForDiet(updated.dietType || 'Normal');
+    setMealPlan(updatedPlan);
+
+    if (user) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { 
+          onboarding: updated, 
+          shoppingList: updatedList, 
+          mealPlan: updatedPlan 
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Could not save updated settings to Firestore:", err);
+      }
+    }
   };
 
   // Daily Meal Plan Refresh / Rotation state
@@ -1142,13 +1623,13 @@ export default function App() {
   const [selectedProductDetail, setSelectedProductDetail] = useState<FoodProduct | null>(null);
 
   // Water Tracker
-  const [waterAmount, setWaterAmount] = useState(1250); // ml
+  const [waterAmount, setWaterAmount] = useState(0); // ml
 
   // Budget Adherence & Weekly Planning Streak state
   const [streakDays, setStreakDays] = useState<Record<string, boolean>>({
-    'Mon': true,
-    'Tue': true,
-    'Wed': true,
+    'Mon': false,
+    'Tue': false,
+    'Wed': false,
     'Thu': false,
     'Fri': false,
     'Sat': false,
@@ -1172,127 +1653,63 @@ export default function App() {
     costPerCalorie: number;
     avgHealthScore: number;
   }>({
-    items: [
-      {
-        product: FOOD_DATABASE[0], // Chicken Breast
-        quantity: 1,
-        totalCost: 24.99,
-        consumeType: 'daily'
-      },
-      {
-        product: FOOD_DATABASE[5], // Eggs 30pcs
-        quantity: 1,
-        totalCost: 19.99,
-        consumeType: 'daily'
-      },
-      {
-        product: FOOD_DATABASE[10], // Oats
-        quantity: 1,
-        totalCost: 3.49,
-        consumeType: 'daily'
-      },
-      {
-        product: FOOD_DATABASE[7], // Greek Yogurt 2%
-        quantity: 1,
-        totalCost: 5.49,
-        consumeType: 'daily'
-      },
-      {
-        product: FOOD_DATABASE[14], // Frozen Veggies
-        quantity: 1,
-        totalCost: 7.99,
-        consumeType: 'daily'
-      },
-      {
-        product: FOOD_DATABASE[15], // Banane
-        quantity: 1,
-        totalCost: 6.99,
-        consumeType: 'daily'
-      },
-      {
-        product: FOOD_DATABASE[17], // Peanut Butter
-        quantity: 1,
-        totalCost: 9.99,
-        consumeType: 'daily'
-      }
-    ],
-    totalCost: 78.93,
-    totalProtein: 3610,
-    totalCarbs: 4515,
-    totalFat: 2599,
-    totalCalories: 55899,
-    totalFiber: 350,
-    costPerProteinGram: 0.02,
-    costPerCalorie: 0.001,
-    avgHealthScore: 92
+    items: [],
+    totalCost: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+    totalCalories: 0,
+    totalFiber: 0,
+    costPerProteinGram: 0,
+    costPerCalorie: 0,
+    avgHealthScore: 0
   });
+
+  const [lastListRefreshTime, setLastListRefreshTime] = useState<string | null>(null);
 
   // Saved / Active Meal Plan
   const [mealPlan, setMealPlan] = useState<MealPlan>({
     breakfast: {
-      name: "Protein Power Oatmeal",
-      recipe: "Cook oats with water, stir in Greek yogurt and peanut butter, top with banana slices.",
-      preparationSteps: [
-        "In a bowl, mix 80g oats with 200ml hot water or milk.",
-        "Microwave for 2 minutes.",
-        "Stir in 150g Greek yogurt 2% and a tablespoon of peanut butter.",
-        "Slice half a banana on top and serve."
-      ],
-      cookingTime: "5 mins",
+      name: "Empty Breakfast",
+      recipe: "Set up your profile and chat with NutriCart AI to generate a meal plan.",
+      preparationSteps: [],
+      cookingTime: "0 mins",
       difficulty: "Easy",
-      nutrition: { protein: 28, carbs: 62, fat: 12, calories: 470 },
-      shoppingIngredients: ["Fulgi de ovăz clasici", "Iaurt grecesc 2%", "Unt de arahide cremos", "Banane proaspete"]
+      nutrition: { protein: 0, carbs: 0, fat: 0, calories: 0 },
+      shoppingIngredients: []
     },
     lunch: {
-      name: "Seared Chicken with Basmati and Broccoli",
-      recipe: "Pan-fry chicken breast, boil Basmati rice and steam frozen mixed vegetables.",
-      preparationSteps: [
-        "Season 200g chicken breast with salt, pepper, and garlic powder.",
-        "Pan-sear in a non-stick pan with a spray of olive oil for 6 mins per side.",
-        "Boil 80g Basmati rice in salted water.",
-        "Steam 150g frozen mixed vegetables.",
-        "Assemble and enjoy a high protein, clean fuel meal."
-      ],
-      cookingTime: "15 mins",
-      difficulty: "Medium",
-      nutrition: { protein: 52, carbs: 65, fat: 4, calories: 510 },
-      shoppingIngredients: ["Piept de pui dezosat", "Orez Basmati", "Amestec de legume congelate"]
+      name: "Empty Lunch",
+      recipe: "Set up your profile and chat with NutriCart AI to generate a meal plan.",
+      preparationSteps: [],
+      cookingTime: "0 mins",
+      difficulty: "Easy",
+      nutrition: { protein: 0, carbs: 0, fat: 0, calories: 0 },
+      shoppingIngredients: []
     },
     dinner: {
-      name: "Egg & Tofu Veggie Scramble",
-      recipe: "Scramble whole eggs with cubed tofu and mixed frozen veggies in a skillet.",
-      preparationSteps: [
-        "Chop 100g Tofu into small cubes.",
-        "Crack 3 whole eggs into a bowl, whisk with a pinch of salt.",
-        "Sauté tofu and a handful of mixed veggies in a skillet for 3 mins.",
-        "Pour the whisked eggs into the skillet and stir gently until fully cooked."
-      ],
-      cookingTime: "10 mins",
+      name: "Empty Dinner",
+      recipe: "Set up your profile and chat with NutriCart AI to generate a meal plan.",
+      preparationSteps: [],
+      cookingTime: "0 mins",
       difficulty: "Easy",
-      nutrition: { protein: 32, carbs: 12, fat: 22, calories: 370 },
-      shoppingIngredients: ["Ouă proaspete M", "Tofu Clasic în saramură", "Amestec de legume congelate"]
+      nutrition: { protein: 0, carbs: 0, fat: 0, calories: 0 },
+      shoppingIngredients: []
     },
     snacks: {
-      name: "Greek Yogurt & Berries bowl",
-      recipe: "Top high protein low-fat Greek yogurt with antioxidant-rich frozen forest berries.",
-      preparationSteps: [
-        "Scoop 200g of Greek Yogurt 2% into a bowl.",
-        "Microwave 80g of frozen berries for 30s to thaw.",
-        "Mix together with a pinch of stevia or honey if preferred."
-      ],
-      cookingTime: "2 mins",
+      name: "Empty Snack",
+      recipe: "Set up your profile and chat with NutriCart AI to generate a meal plan.",
+      preparationSteps: [],
+      cookingTime: "0 mins",
       difficulty: "Easy",
-      nutrition: { protein: 18, carbs: 14, fat: 4, calories: 164 },
-      shoppingIngredients: ["Iaurt grecesc 2%", "Fructe de pădure congelate"]
+      nutrition: { protein: 0, carbs: 0, fat: 0, calories: 0 },
+      shoppingIngredients: []
     }
   });
 
   // Budget Suggestions / Smart replacements
   const [budgetSuggestions, setBudgetSuggestions] = useState<string[]>([
-    "Save 18 lei by replacing Salmon Fillets with Canned Tuna in your next run.",
-    "Lidl is offering a 20% discount on Pilos Greek Yogurt 2% this week.",
-    "Buying frozen mixed veggies instead of fresh broccoli saves you 4.5 lei per kg.",
-    "Your active grocery list uses 41% of your weekly budget. You have 203.15 lei left!"
+    "Set your weekly budget limit to start receiving optimization insights!"
   ]);
 
   // Chat message history
@@ -1306,12 +1723,7 @@ export default function App() {
   ]);
 
   // Pantry inventory
-  const [pantryItems, setPantryItems] = useState<PantryItem[]>([
-    { id: "1", name: "Oats", quantity: "1.2 kg", expirationDate: "2026-10-15", daysRemaining: 107 },
-    { id: "2", name: "Whey Protein", quantity: "450g", expirationDate: "2026-12-01", daysRemaining: 154 },
-    { id: "3", name: "Greek Yogurt", quantity: "400g", expirationDate: "2026-07-10", daysRemaining: 10 },
-    { id: "4", name: "Eggs", quantity: "12 pcs", expirationDate: "2026-07-22", daysRemaining: 22 }
-  ]);
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
 
   // Cart Items State
   const [cartItems, setCartItems] = useState<Array<{
@@ -1324,6 +1736,219 @@ export default function App() {
 
   // Manual spent budget state (starts at 0 as requested)
   const [manualSpentAmount, setManualSpentAmount] = useState<number>(0);
+
+  // Listen to Auth changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setAuthLoading(true);
+        
+        const restoreFromData = (data: any) => {
+          if (data.onboarding) {
+            setTempOnboarding(data.onboarding);
+            setOnboarding(data.onboarding);
+            setHasExistingProfile(true);
+          } else {
+            setOnboarding(null);
+            setOnboardingStep(1);
+          }
+          if (typeof data.waterAmount === 'number') setWaterAmount(data.waterAmount);
+          if (data.streakDays) setStreakDays(data.streakDays);
+          if (data.shoppingList && data.shoppingList.items && data.shoppingList.items.length > 0) {
+            setShoppingList(data.shoppingList);
+          } else if (data.onboarding) {
+            setShoppingList(generateDefaultShoppingList(data.onboarding));
+          }
+          if (data.mealPlan && data.mealPlan.breakfast && data.mealPlan.breakfast.name !== "Empty Breakfast") {
+            setMealPlan(data.mealPlan);
+          } else if (data.onboarding) {
+            setMealPlan(getMealPlanForDiet(data.onboarding.dietType || 'Normal'));
+          }
+          if (data.budgetSuggestions) setBudgetSuggestions(data.budgetSuggestions);
+          if (data.messages) setMessages(data.messages);
+          if (data.pantryItems) setPantryItems(data.pantryItems);
+          if (data.cartItems) setCartItems(data.cartItems);
+          if (typeof data.manualSpentAmount === 'number') setManualSpentAmount(data.manualSpentAmount);
+          if (data.loggedFoods) setLoggedFoods(data.loggedFoods);
+          if (typeof data.targetDailyCalories === 'number') setTargetDailyCalories(data.targetDailyCalories);
+          if (typeof data.targetDailyProtein === 'number') setTargetDailyProtein(data.targetDailyProtein);
+          if (typeof data.targetDailyCarbs === 'number') setTargetDailyCarbs(data.targetDailyCarbs);
+          if (typeof data.targetDailyFat === 'number') setTargetDailyFat(data.targetDailyFat);
+          if (data.lastListRefreshTime) setLastListRefreshTime(data.lastListRefreshTime);
+        };
+
+        const initializeDefaultData = () => {
+          setTempOnboarding({
+            age: 0,
+            gender: '',
+            height: 0,
+            weight: 0,
+            goal: '',
+            activityLevel: '',
+            preferredStores: [],
+            country: 'Romania',
+            currency: 'lei',
+            budget: 0,
+            foodAllergies: [],
+            foodsDislike: [],
+            foodsLove: [],
+            dietType: '',
+            planningFrequency: ''
+          });
+          setOnboardingStep(1);
+          setHasExistingProfile(false);
+          setOnboarding(null);
+          setWaterAmount(0);
+          setStreakDays({
+            'Mon': false, 'Tue': false, 'Wed': false, 'Thu': false, 'Fri': false, 'Sat': false, 'Sun': false
+          });
+          setShoppingList({
+            items: [], totalCost: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, totalCalories: 0, totalFiber: 0, costPerProteinGram: 0, costPerCalorie: 0, avgHealthScore: 0
+          });
+          setMealPlan(MEAL_PRESETS_POOL[0]);
+          setBudgetSuggestions(["Set your weekly budget limit to start receiving optimization insights!"]);
+          setPantryItems([]);
+          setCartItems([]);
+          setManualSpentAmount(0);
+          setLoggedFoods([]);
+          setTargetDailyCalories(0);
+          setTargetDailyProtein(0);
+          setTargetDailyCarbs(0);
+          setTargetDailyFat(0);
+          setLastListRefreshTime(null);
+        };
+
+        try {
+          // Fetch user document from Firestore
+          const docRef = doc(db, 'users', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            restoreFromData(data);
+            // Save to offline cache
+            try {
+              localStorage.setItem('nutricart_offline_data_' + currentUser.uid, JSON.stringify(data));
+            } catch (cacheErr) {
+              console.warn("Could not save to localStorage cache:", cacheErr);
+            }
+          } else {
+            // First time on the app, initialize default empty state
+            initializeDefaultData();
+          }
+          setIsDataLoaded(true);
+        } catch (err) {
+          console.warn("Failed to reach Firestore. Trying to load from local offline cache instead...", err);
+          
+          // Try to load from offline cache
+          try {
+            const cachedString = localStorage.getItem('nutricart_offline_data_' + currentUser.uid);
+            if (cachedString) {
+              const data = JSON.parse(cachedString);
+              restoreFromData(data);
+            } else {
+              initializeDefaultData();
+            }
+          } catch (offlineErr) {
+            console.error("Failed to load from local offline cache too:", offlineErr);
+            initializeDefaultData();
+          }
+          
+          setIsDataLoaded(true); // set loaded anyway to allow operations even if offline
+        }
+      } else {
+        // Logged out
+        setOnboarding(null);
+        setOnboardingStep(1);
+        setHasExistingProfile(false);
+        setAuthView('choice');
+        setTempOnboarding({
+          age: 0,
+          gender: '',
+          height: 0,
+          weight: 0,
+          goal: '',
+          activityLevel: '',
+          preferredStores: [],
+          country: 'Romania',
+          currency: 'lei',
+          budget: 0,
+          foodAllergies: [],
+          foodsDislike: [],
+          foodsLove: [],
+          dietType: '',
+          planningFrequency: ''
+        });
+        setIsDataLoaded(false);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Auto-Save User Data to Firestore on changes
+  useEffect(() => {
+    if (!user || !isDataLoaded) return;
+    
+    const saveTimeout = setTimeout(async () => {
+      const localData = {
+        onboarding,
+        waterAmount,
+        streakDays,
+        shoppingList,
+        mealPlan,
+        budgetSuggestions,
+        messages,
+        pantryItems,
+        cartItems,
+        manualSpentAmount,
+        loggedFoods,
+        targetDailyCalories,
+        targetDailyProtein,
+        targetDailyCarbs,
+        targetDailyFat,
+        lastListRefreshTime,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Always save to offline localStorage cache first
+      try {
+        localStorage.setItem('nutricart_offline_data_' + user.uid, JSON.stringify(localData));
+      } catch (cacheErr) {
+        console.warn("Could not save to localStorage cache:", cacheErr);
+      }
+
+      // Then save to Firestore in background
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, localData, { merge: true });
+      } catch (err) {
+        console.warn("Could not autosave to Firestore (currently offline or unreachable):", err);
+      }
+    }, 1000); // 1-second debounce to avoid excessive writes
+    
+    return () => clearTimeout(saveTimeout);
+  }, [
+    user,
+    isDataLoaded,
+    onboarding,
+    waterAmount,
+    streakDays,
+    shoppingList,
+    mealPlan,
+    budgetSuggestions,
+    messages,
+    pantryItems,
+    cartItems,
+    manualSpentAmount,
+    loggedFoods,
+    targetDailyCalories,
+    targetDailyProtein,
+    targetDailyCarbs,
+    targetDailyFat,
+    lastListRefreshTime
+  ]);
 
   // Scaled meal plan to target daily kcal amount
   const baseTotalCalories = (mealPlan.breakfast?.nutrition?.calories || 0) +
@@ -1499,7 +2124,7 @@ export default function App() {
   }, [onboarding?.country, onboarding?.budget, tempOnboarding.country, tempOnboarding.budget, shoppingList.totalCost]);
 
   // Handle skip/demo onboarding
-  const skipOnboarding = () => {
+  const skipOnboarding = async () => {
     const validatedOnboarding: OnboardingData = {
       ...tempOnboarding,
       age: tempOnboarding.age || 24,
@@ -1508,9 +2133,29 @@ export default function App() {
       budget: tempOnboarding.budget || 350
     };
     setOnboarding(validatedOnboarding);
+    setHasExistingProfile(true);
+    
+    const defaultList = generateDefaultShoppingList(validatedOnboarding);
+    setShoppingList(defaultList);
+
+    const defaultMealPlan = getMealPlanForDiet(validatedOnboarding.dietType || 'Normal');
+    setMealPlan(defaultMealPlan);
+    
+    if (user) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { 
+          onboarding: validatedOnboarding, 
+          shoppingList: defaultList,
+          mealPlan: defaultMealPlan
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Could not save onboarding to Firestore (currently offline or unreachable):", err);
+      }
+    }
   };
 
-  const handleOnboardingSubmit = (e: React.FormEvent) => {
+  const handleOnboardingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validatedOnboarding: OnboardingData = {
       ...tempOnboarding,
@@ -1520,6 +2165,26 @@ export default function App() {
       budget: tempOnboarding.budget || 350
     };
     setOnboarding(validatedOnboarding);
+    setHasExistingProfile(true);
+
+    const defaultList = generateDefaultShoppingList(validatedOnboarding);
+    setShoppingList(defaultList);
+
+    const defaultMealPlan = getMealPlanForDiet(validatedOnboarding.dietType || 'Normal');
+    setMealPlan(defaultMealPlan);
+
+    if (user) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { 
+          onboarding: validatedOnboarding, 
+          shoppingList: defaultList,
+          mealPlan: defaultMealPlan
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Could not save onboarding to Firestore (currently offline or unreachable):", err);
+      }
+    }
   };
 
   // Call API chat model
@@ -1569,7 +2234,7 @@ export default function App() {
 
       // If the response returned optimized metrics, sync them to our global dashboard
       if (result.shoppingList) {
-        setShoppingList(result.shoppingList);
+        setShoppingList(recalculateShoppingListMetrics(result.shoppingList.items || []));
       }
       if (result.mealPlan) {
         setMealPlan(result.mealPlan);
@@ -1687,6 +2352,21 @@ export default function App() {
     setIsRefreshingShoppingList(true);
     const activeOnb = onboarding || tempOnboarding;
 
+    // Immediately generate a fresh randomized rotated client-side list to ensure rapid feedback
+    const freshList = generateDefaultShoppingList(activeOnb);
+    setShoppingList(freshList);
+    setLastListRefreshTime(new Date().toISOString());
+
+    if (user && activeOnb) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { shoppingList: freshList, lastListRefreshTime: new Date().toISOString() }, { merge: true });
+      } catch (err) {
+        console.warn("Could not save refreshed list to Firestore:", err);
+      }
+    }
+
+    // Try to complement it with the AI optimization suggestions in background/parallel
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -1704,117 +2384,36 @@ export default function App() {
 
       if (response.ok) {
         const result = await response.json();
-        if (result.shoppingList) {
-          setShoppingList(result.shoppingList);
+        if (result.shoppingList && result.shoppingList.items && result.shoppingList.items.length >= 8) {
+          const aiRecalculated = recalculateShoppingListMetrics(result.shoppingList.items);
+          setShoppingList(aiRecalculated);
           if (result.budgetAnalysis && result.budgetAnalysis.suggestions) {
             setBudgetSuggestions(result.budgetAnalysis.suggestions);
           }
-          setIsRefreshingShoppingList(false);
-          return;
+          if (user) {
+            try {
+              const docRef = doc(db, 'users', user.uid);
+              await setDoc(docRef, { shoppingList: aiRecalculated }, { merge: true });
+            } catch (err) {
+              console.warn("Could not save AI refreshed list to Firestore:", err);
+            }
+          }
         }
       }
     } catch (e) {
       console.warn("AI Shopping list refresh fetch failed, falling back to client-side high-fidelity logic");
     }
 
-    // Offline High-Fidelity Regeneration Fallback
-    setTimeout(() => {
-      const dietType = activeOnb?.dietType || 'Normal';
-      const allergies = activeOnb?.foodAllergies || [];
-      const dislikes = activeOnb?.foodsDislike || [];
-      
-      // 1. Gather all required ingredients from the active meal plan
-      const mealIngredients = [
-        ...(mealPlan?.breakfast?.shoppingIngredients || []),
-        ...(mealPlan?.lunch?.shoppingIngredients || []),
-        ...(mealPlan?.dinner?.shoppingIngredients || []),
-        ...(mealPlan?.snacks?.shoppingIngredients || []),
-      ];
+    const userCountry = activeOnb?.country || 'Romania';
+    const countryConfig = COUNTRIES[userCountry] || COUNTRIES['Romania'];
+    
+    setBudgetSuggestions(prev => [
+      `Rotated your daily recommended list! Your local stores in ${userCountry} (${countryConfig.stores.join(', ')}) are stocked with these ingredients.`,
+      `Selected exactly 10 variety items matching your ${activeOnb?.dietType || 'Normal'} diet & budget constraints.`,
+      ...prev.slice(0, 2)
+    ]);
 
-      // 2. Map ingredient strings to catalog products in FOOD_DATABASE, filtered by allergies/dislikes
-      const selectedProducts: FoodProduct[] = [];
-      const addedProductIds = new Set<string>();
-
-      // Helper to clean and match ingredients
-      const matchProduct = (ingName: string) => {
-        const norm = ingName.toLowerCase();
-        
-        // Find a product that contains this ingredient or vice versa
-        return FOOD_DATABASE.find(p => {
-          if (isAllergicOrDisliked(p, allergies, dislikes)) return false;
-          
-          const pNameLower = p.name.toLowerCase();
-          const pCategoryLower = p.category.toLowerCase();
-          const pIngLower = (p.ingredients || '').toLowerCase();
-          
-          return pNameLower.includes(norm) || 
-                 norm.includes(pNameLower) || 
-                 pIngLower.includes(norm) ||
-                 (norm.includes('pui') && pNameLower.includes('pui')) ||
-                 (norm.includes('ou') && pNameLower.includes('ou')) ||
-                 (norm.includes('ovăz') && pNameLower.includes('ovăz')) ||
-                 (norm.includes('iaurt') && pNameLower.includes('iaurt')) ||
-                 (norm.includes('legume') && pNameLower.includes('legume')) ||
-                 (norm.includes('unt de arahide') && pNameLower.includes('arahide')) ||
-                 (norm.includes('tofu') && pNameLower.includes('tofu')) ||
-                 (norm.includes('fructe') && pNameLower.includes('fructe')) ||
-                 (norm.includes('somon') && pNameLower.includes('somon'));
-        });
-      };
-
-      mealIngredients.forEach(ing => {
-        const match = matchProduct(ing);
-        if (match && !addedProductIds.has(match.id)) {
-          selectedProducts.push(match);
-          addedProductIds.add(match.id);
-        }
-      });
-
-      // 3. If the resulting list is too small, add standard safe staples for the diet type
-      if (selectedProducts.length < 4) {
-        FOOD_DATABASE.forEach(p => {
-          if (selectedProducts.length >= 7) return;
-          if (addedProductIds.has(p.id)) return;
-          if (isAllergicOrDisliked(p, allergies, dislikes)) return;
-
-          // Check diet compatibility
-          if (dietType === 'Keto' && p.carbs > 8) return;
-          if (dietType === 'Vegan' && (p.category.includes('Meat') || p.category.includes('Dairy') || p.name.includes('ouă') || p.name.includes('Egg') || p.name.includes('pui') || p.name.includes('somon'))) return;
-          if (dietType === 'Vegetarian' && (p.category.includes('Meat') || p.name.includes('pui') || p.name.includes('somon'))) return;
-          if (dietType === 'Gluten Free' && (p.name.includes('pâine') || p.name.includes('wheat') || p.name.includes('paste') || p.name.includes('făină'))) return;
-
-          selectedProducts.push(p);
-          addedProductIds.add(p.id);
-        });
-      }
-
-      // 4. Convert into ShoppingItem array
-      const freshItems: ShoppingItem[] = selectedProducts.map(product => {
-        // Set standard initial quantity
-        let initialQty = 1;
-        // If it's something consumed in larger quantities, maybe 2
-        if (product.name.toLowerCase().includes('iaurt') || product.name.toLowerCase().includes('banane')) {
-          initialQty = 2;
-        }
-        return {
-          product,
-          quantity: initialQty,
-          totalCost: product.price * initialQty,
-          consumeType: 'daily'
-        };
-      });
-
-      // 5. Apply metrics and update state
-      setShoppingList(recalculateShoppingListMetrics(freshItems));
-      
-      // Sync a beautiful success notification/log
-      setBudgetSuggestions(prev => [
-        `Successfully refreshed and synchronized shopping list items with your active ${dietType} diet!`,
-        ...prev.slice(0, 3)
-      ]);
-
-      setIsRefreshingShoppingList(false);
-    }, 600);
+    setIsRefreshingShoppingList(false);
   };
 
   // Initial prompt setup helper
@@ -1841,6 +2440,545 @@ export default function App() {
     : onboardingStep === 2 
     ? isStep2Valid 
     : isStep3Valid;
+
+  // If authenticating, show high-end loading spinner
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center font-sans">
+        <div className="w-16 h-16 border-4 border-[#4CAF50] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-bold text-sm">Authenticating with NutriCart AI...</p>
+      </div>
+    );
+  }
+
+  // If user is not logged in, show the Login / Signup screen
+  if (!user) {
+    const handleAuthSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setAuthError('');
+
+      if (authView === 'signup') {
+        if (!fullName.trim()) {
+          setAuthError('Please enter your full name.');
+          return;
+        }
+        if (!email || !password || !confirmPassword) {
+          setAuthError('Please fill in all required fields.');
+          return;
+        }
+        if (password.length < 6) {
+          setAuthError('The password must be at least 6 characters.');
+          return;
+        }
+        if (password !== confirmPassword) {
+          setAuthError('Passwords do not match.');
+          return;
+        }
+      } else {
+        if (!email || !password) {
+          setAuthError('Please fill in both email and password.');
+          return;
+        }
+      }
+
+      setAuthSubmitting(true);
+      try {
+        if (authView === 'signup') {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          if (userCredential.user) {
+            await updateProfile(userCredential.user, { displayName: fullName });
+          }
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (err: any) {
+        console.error(err);
+        let msg = 'Authentication failed. Please check your credentials.';
+        if (err.code === 'auth/email-already-in-use') {
+          msg = 'This email is already in use. Try signing in instead!';
+        } else if (err.code === 'auth/weak-password') {
+          msg = 'The password must be at least 6 characters.';
+        } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+          msg = 'Invalid email or password.';
+        } else if (err.code === 'auth/operation-not-allowed') {
+          msg = 'Email/Password sign-in is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method tab, click "Add new provider", and enable "Email/Password".';
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setAuthError(msg);
+      } finally {
+        setAuthSubmitting(false);
+      }
+    };
+
+    const handleGoogleSignIn = async () => {
+      setAuthError('');
+      setAuthSubmitting(true);
+      try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (err: any) {
+        console.error(err);
+        let msg = 'Google authentication failed. Please try email and password.';
+        if (err.code === 'auth/operation-not-allowed') {
+          msg = 'Google sign-in is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method tab, click "Add new provider", and enable "Google" sign-in.';
+        } else if (err.message) {
+          msg = `Google authentication failed: ${err.message}`;
+        }
+        setAuthError(msg);
+      } finally {
+        setAuthSubmitting(false);
+      }
+    };
+
+    const handleBypassDemo = () => {
+      const mockUser = {
+        uid: "demo-user-123",
+        email: "demo@nutricartai.com",
+        displayName: "Demo User",
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+      } as any as FirebaseUser;
+      
+      setUser(mockUser);
+      setIsDataLoaded(true);
+      
+      const demoOnboarding: OnboardingData = {
+        age: 30,
+        gender: 'male',
+        height: 180,
+        weight: 80,
+        goal: 'lose_weight',
+        activityLevel: 'lightly_active',
+        preferredStores: ['Lidl', 'Kaufland'],
+        country: 'Romania',
+        currency: 'lei',
+        budget: 350,
+        foodAllergies: [],
+        foodsDislike: [],
+        foodsLove: ['Avocado', 'Salmon', 'Greek Yogurt'],
+        dietType: 'High Protein',
+        planningFrequency: 'weekly'
+      };
+      
+      setTempOnboarding(demoOnboarding);
+      setOnboarding(demoOnboarding);
+      setHasExistingProfile(true);
+      setTargetDailyCalories(2000);
+      setTargetDailyProtein(150);
+      setTargetDailyCarbs(180);
+      setTargetDailyFat(60);
+      
+      setShoppingList(generateDefaultShoppingList(demoOnboarding));
+      setMealPlan(getMealPlanForDiet('High Protein'));
+    };
+
+    return (
+      <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-[#F8F9FA] text-slate-800'} flex flex-col justify-between font-sans`}>
+        <header className={`h-16 border-b px-6 flex items-center justify-between transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#4CAF50] rounded-xl flex items-center justify-center shadow-lg shadow-green-100">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-black tracking-tight text-[#2E7D32]">NutriCart<span className="text-slate-400">AI</span></span>
+          </div>
+          <div>
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-[#4CAF50] hover:text-[#2E7D32] transition flex items-center justify-center cursor-pointer"
+            >
+              {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </div>
+        </header>
+
+        <main className="flex-1 max-w-md w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
+          <div className={`rounded-3xl border transition-all duration-300 shadow-xl p-6 sm:p-8 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            
+            {authView === 'choice' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-[#4CAF50]/15 rounded-3xl flex items-center justify-center mb-4 text-[#4CAF50]">
+                    <ShoppingCart className="w-10 h-10" />
+                  </div>
+                  <h1 className={`text-3xl font-black tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    NutriCart<span className="text-[#4CAF50]">AI</span>
+                  </h1>
+                  <p className={`text-sm mt-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Smart Grocery Budgeting & AI Diet Optimizer for Romanian Supermarkets
+                  </p>
+                </div>
+
+                <div className={`p-4 rounded-2xl text-xs space-y-2 border ${isDarkMode ? 'bg-slate-700/50 border-slate-600 text-slate-300' : 'bg-green-50/50 border-green-100 text-slate-600'}`}>
+                  <p className="font-bold flex items-center gap-1.5 text-[#2E7D32]">
+                    <Sparkles className="w-4 h-4 text-[#4CAF50]" /> What you can do:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-1">
+                    <li>Generate optimal meal plans matching your budget</li>
+                    <li>Map prices to Lidl, Kaufland, Mega Image & Carrefour</li>
+                    <li>Optimize protein, fiber & vitamin daily constraints</li>
+                    <li>Avoid food waste with an intelligent pantry tracker</li>
+                  </ul>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => {
+                      setAuthError('');
+                      setAuthView('login');
+                      setIsSignUp(false);
+                    }}
+                    className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 border cursor-pointer active:scale-[0.98] ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-650 border-slate-650 text-white shadow-sm' 
+                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 shadow-sm'
+                    }`}
+                  >
+                    Log In to Your Account
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setAuthError('');
+                      setAuthView('signup');
+                      setIsSignUp(true);
+                    }}
+                    className="w-full bg-[#2E7D32] hover:bg-[#1b4e20] text-white py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-900/10 active:scale-[0.98] cursor-pointer"
+                  >
+                    Create a Free Account
+                  </button>
+                </div>
+
+                <div className="relative my-6 flex items-center justify-center">
+                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
+                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
+                    or join with
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleGoogleSignIn}
+                  disabled={authSubmitting}
+                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] border cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-slate-700 hover:bg-slate-650 border-slate-600 text-white' 
+                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.23 1.96 15.44 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.74-.08-1.3-.176-1.854H12.24V10.29z"/>
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
+
+                <div className="relative my-4 flex items-center justify-center">
+                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
+                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
+                    or test instantly
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleBypassDemo}
+                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 border cursor-pointer active:scale-[0.98] ${
+                    isDarkMode 
+                      ? 'bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-800/40 text-emerald-300' 
+                      : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 text-[#2E7D32]'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-[#4CAF50] animate-pulse" />
+                  <span>Access with Demo Account (Bypass)</span>
+                </button>
+              </div>
+            )}
+
+            {authView === 'login' && (
+              <div className="space-y-6">
+                <div>
+                  <button
+                    onClick={() => {
+                      setAuthError('');
+                      setAuthView('choice');
+                    }}
+                    className="text-xs font-bold text-[#4CAF50] hover:text-[#2E7D32] transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to welcome
+                  </button>
+                  <h1 className={`text-2xl font-black mt-4 tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Welcome Back
+                  </h1>
+                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Log in to access your custom shopping list, pantry, and meal plans.
+                  </p>
+                </div>
+
+                {authError && (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-semibold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>{authError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleBypassDemo}
+                      className="w-full text-xs font-bold text-emerald-600 hover:text-emerald-750 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400 py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-emerald-100"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Troubleshoot: Use Instant Demo Account
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                  <div>
+                    <label className={`block text-[10px] sm:text-xs font-bold uppercase mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className={`w-full border rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none transition-all ${
+                        isDarkMode 
+                          ? 'bg-slate-700 border-slate-600 text-white focus:bg-slate-750' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-[10px] sm:text-xs font-bold uppercase mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className={`w-full border rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none transition-all ${
+                        isDarkMode 
+                          ? 'bg-slate-700 border-slate-600 text-white focus:bg-slate-750' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authSubmitting}
+                    className="w-full bg-[#4CAF50] hover:bg-[#2E7D32] text-white py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-lg shadow-green-100 dark:shadow-none transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {authSubmitting ? 'Logging in...' : 'Log In'}
+                  </button>
+                </form>
+
+                <div className="relative my-4 flex items-center justify-center">
+                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
+                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
+                    or
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleGoogleSignIn}
+                  disabled={authSubmitting}
+                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] border cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-slate-700 hover:bg-slate-650 border-slate-600 text-white' 
+                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.23 1.96 15.44 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.74-.08-1.3-.176-1.854H12.24V10.29z"/>
+                  </svg>
+                  <span>Log In with Google</span>
+                </button>
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => {
+                      setAuthError('');
+                      setAuthView('signup');
+                      setIsSignUp(true);
+                    }}
+                    className="text-xs font-semibold text-[#2E7D32] hover:underline cursor-pointer"
+                  >
+                    Don't have an account? Sign Up
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {authView === 'signup' && (
+              <div className="space-y-6">
+                <div>
+                  <button
+                    onClick={() => {
+                      setAuthError('');
+                      setAuthView('choice');
+                    }}
+                    className="text-xs font-bold text-[#4CAF50] hover:text-[#2E7D32] transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to welcome
+                  </button>
+                  <h1 className={`text-2xl font-black mt-4 tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Create Your Account
+                  </h1>
+                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Start planning custom, optimized meals and budget-focused grocery lists.
+                  </p>
+                </div>
+
+                {authError && (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-semibold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>{authError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleBypassDemo}
+                      className="w-full text-xs font-bold text-emerald-600 hover:text-emerald-750 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400 py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-emerald-100"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Troubleshoot: Use Instant Demo Account
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                  <div>
+                    <label className={`block text-[10px] sm:text-xs font-bold uppercase mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      placeholder="John Doe"
+                      className={`w-full border rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none transition-all ${
+                        isDarkMode 
+                          ? 'bg-slate-700 border-slate-600 text-white focus:bg-slate-750' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-[10px] sm:text-xs font-bold uppercase mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className={`w-full border rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none transition-all ${
+                        isDarkMode 
+                          ? 'bg-slate-700 border-slate-600 text-white focus:bg-slate-750' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-[10px] sm:text-xs font-bold uppercase mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className={`w-full border rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none transition-all ${
+                        isDarkMode 
+                          ? 'bg-slate-700 border-slate-600 text-white focus:bg-slate-750' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-[10px] sm:text-xs font-bold uppercase mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter your password"
+                      className={`w-full border rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none transition-all ${
+                        isDarkMode 
+                          ? 'bg-slate-700 border-slate-600 text-white focus:bg-slate-750' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authSubmitting}
+                    className="w-full bg-[#2E7D32] hover:bg-[#1b4e20] text-white py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-lg shadow-green-900/10 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {authSubmitting ? 'Creating Account...' : 'Sign Up'}
+                  </button>
+                </form>
+
+                <div className="relative my-4 flex items-center justify-center">
+                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
+                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
+                    or
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleGoogleSignIn}
+                  disabled={authSubmitting}
+                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] border cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-slate-700 hover:bg-slate-650 border-slate-600 text-white' 
+                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.23 1.96 15.44 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.74-.08-1.3-.176-1.854H12.24V10.29z"/>
+                  </svg>
+                  <span>Sign Up with Google</span>
+                </button>
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => {
+                      setAuthError('');
+                      setAuthView('login');
+                      setIsSignUp(false);
+                    }}
+                    className="text-xs font-semibold text-[#2E7D32] hover:underline cursor-pointer"
+                  >
+                    Already have an account? Log In
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        <footer className={`h-12 border-t flex items-center justify-center text-xs text-slate-400 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-white border-slate-100 text-slate-400'}`}>
+          Powered by Gemini 3.5 &amp; Romanian Market Catalog
+        </footer>
+      </div>
+    );
+  }
 
   // If onboarding is not completed, show the beautiful step-by-step form
   if (!onboarding) {
@@ -2224,8 +3362,6 @@ export default function App() {
   const activeFat = totalLoggedFat;
 
   // Currency and Store Localization helpers based on active onboarding
-  const activeCountry = onboarding?.country || tempOnboarding?.country || 'Romania';
-  const countryConfig = COUNTRIES[activeCountry] || COUNTRIES['Romania'];
 
   const formatPriceLocal = (price: number) => {
     if (countryConfig.currencySymbol === '$') {
@@ -2386,76 +3522,6 @@ export default function App() {
     return brandMaps[activeCountry]?.[brand] || brand;
   };
 
-  const recalculateShoppingListMetrics = (items: ShoppingItem[], customOnboarding?: OnboardingData) => {
-    const activeOnboarding = customOnboarding || onboarding || tempOnboarding;
-    const dietType = activeOnboarding?.dietType || 'Normal';
-
-    const updatedItems = items.map(item => {
-      // Use the actual package price as requested (a person buys the product which will last for many days)
-      const totalCost = parseFloat((item.product.price * item.quantity).toFixed(2));
-
-      return {
-        ...item,
-        totalCost
-      };
-    });
-
-    const totalCost = updatedItems.reduce((acc, item) => acc + item.totalCost, 0);
-
-    let totalProtein = 0;
-    let totalCarbs = 0;
-    let totalFat = 0;
-    let totalCalories = 0;
-    let totalFiber = 0;
-
-    updatedItems.forEach(item => {
-      const portion = getStandardDailyPortion(item.product.name, dietType);
-      const consume = item.consumeType || 'daily';
-      
-      const consumedQty = consume === 'daily' ? portion.amount : portion.amount * 7;
-
-      const weightGrams = getWeightInGrams(item.product.weight);
-      const pieceCount = getProductPieceCount(item.product);
-      const packSize = portion.unit === 'pcs' ? pieceCount : weightGrams;
-
-      const purchasedQty = packSize * item.quantity;
-      const actualConsumedQty = Math.min(consumedQty, purchasedQty);
-
-      if (portion.unit === 'pcs') {
-        const estWeightPerPiece = item.product.name.toLowerCase().includes('ouă') || item.product.name.toLowerCase().includes('egg') ? 50 : 15;
-        const estWeightGrams = actualConsumedQty * estWeightPerPiece;
-        totalProtein += (item.product.protein * estWeightGrams) / 100;
-        totalCarbs += (item.product.carbs * estWeightGrams) / 100;
-        totalFat += (item.product.fat * estWeightGrams) / 100;
-        totalCalories += (item.product.calories * estWeightGrams) / 100;
-        totalFiber += ((item.product.fiber || 0) * estWeightGrams) / 100;
-      } else {
-        totalProtein += (item.product.protein * actualConsumedQty) / 100;
-        totalCarbs += (item.product.carbs * actualConsumedQty) / 100;
-        totalFat += (item.product.fat * actualConsumedQty) / 100;
-        totalCalories += (item.product.calories * actualConsumedQty) / 100;
-        totalFiber += ((item.product.fiber || 0) * actualConsumedQty) / 100;
-      }
-    });
-
-    const costPerProteinGram = totalProtein > 0 ? (totalCost * countryConfig.rate) / totalProtein : 0;
-    const costPerCalorie = totalCalories > 0 ? (totalCost * countryConfig.rate) / totalCalories : 0;
-    const avgHealthScore = updatedItems.length > 0 ? Math.round(updatedItems.reduce((acc, item) => acc + item.product.healthScore, 0) / updatedItems.length) : 0;
-
-    return {
-      items: updatedItems,
-      totalCost: parseFloat(totalCost.toFixed(2)),
-      totalProtein: Math.round(totalProtein),
-      totalCarbs: Math.round(totalCarbs),
-      totalFat: Math.round(totalFat),
-      totalCalories: Math.round(totalCalories),
-      totalFiber: Math.round(totalFiber),
-      costPerProteinGram: parseFloat(costPerProteinGram.toFixed(4)),
-      costPerCalorie: parseFloat(costPerCalorie.toFixed(4)),
-      avgHealthScore
-    };
-  };
-
   const handleUpdateItemQuantity = (productId: string, newQty: number) => {
     if (newQty < 1) {
       handleRemoveItem(productId);
@@ -2514,10 +3580,36 @@ export default function App() {
   const carbsProgressPercent = targetDailyCarbs > 0 ? Math.min(Math.round((activeCarbs / targetDailyCarbs) * 100), 100) : 0;
   const fatProgressPercent = targetDailyFat > 0 ? Math.min(Math.round((activeFat / targetDailyFat) * 100), 100) : 0;
 
-  // Store comparison list simulation based on current shopping cost
-  const lidlTotal = parseFloat((shoppingList.totalCost * 0.95).toFixed(2));
-  const kauflandTotal = parseFloat((shoppingList.totalCost * 1.02).toFixed(2));
-  const carrefourTotal = parseFloat((shoppingList.totalCost * 1.12).toFixed(2));
+  // Store comparison list simulation based on current shopping cost or high-fidelity benchmark
+  const storeNames = countryConfig.stores || ['Lidl', 'Kaufland', 'Carrefour'];
+  const hasItems = shoppingList.items.length > 0;
+  const baseCost = hasItems ? shoppingList.totalCost : 54.75; // Standard benchmark basket in RON if empty
+
+  const storeComparisonList = [
+    { name: storeNames[0] || 'Lidl', multiplier: 0.92, color: '#4CAF50' },
+    { name: storeNames[1] || 'Kaufland', multiplier: 1.02, color: '#FF9800' },
+    { name: storeNames[2] || 'Carrefour', multiplier: 1.12, color: '#F44336' }
+  ].map(store => {
+    const total = parseFloat((baseCost * store.multiplier).toFixed(2));
+    return {
+      ...store,
+      total
+    };
+  });
+
+  const getRefreshCooldownMessage = () => {
+    if (!lastListRefreshTime) return null;
+    const timePassed = Date.now() - new Date(lastListRefreshTime).getTime();
+    const limit = 4 * 60 * 60 * 1000;
+    if (timePassed < limit) {
+      const timeLeftMs = limit - timePassed;
+      const hours = Math.floor(timeLeftMs / (60 * 60 * 1000));
+      const minutes = Math.floor((timeLeftMs % (60 * 60 * 1000)) / (60 * 1000));
+      return `${hours}h ${minutes}m left`;
+    }
+    return null;
+  };
+  const cooldownMsg = getRefreshCooldownMessage();
 
 
 
@@ -2590,26 +3682,31 @@ export default function App() {
 
             <button 
               id="settings-btn"
-              onClick={() => setIsSettingsModalOpen(true)} 
-              title="Change onboarding settings"
-              className="p-2 hover:bg-slate-100 rounded-xl text-[#4CAF50] hover:text-[#2E7D32] transition flex items-center gap-1.5 font-black text-xs"
+              onClick={() => {
+                setIsSettingsModalOpen(true);
+              }} 
+              title="Edit Profile & Diet settings"
+              className="p-2 hover:bg-[#4CAF50]/10 hover:text-[#2E7D32] text-[#4CAF50] rounded-xl transition flex items-center gap-1.5 font-black text-xs border border-transparent hover:border-[#4CAF50]/20"
             >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
+              <User className="w-4.5 h-4.5" />
+              <span>Account</span>
             </button>
             <div className="h-8 w-px bg-slate-200"></div>
 
             <button 
-              onClick={() => setOnboarding(null)} 
-              title="Reset profile onboarding"
-              className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition"
+              onClick={async () => {
+                await signOut(auth);
+              }} 
+              title="Log Out"
+              className="p-2 hover:bg-rose-50 hover:text-rose-700 text-slate-400 transition flex items-center gap-1.5 font-bold text-xs rounded-xl border border-transparent hover:border-rose-100"
             >
-              <User className="w-5 h-5" />
+              <LogOut className="w-4 h-4 text-rose-500" />
+              <span className="hidden sm:inline text-rose-600">Log Out</span>
             </button>
             <div className="h-8 w-px bg-slate-200"></div>
-            <div className="flex flex-col text-right">
-              <span className="text-xs font-bold text-slate-800">{onboarding.dietType}</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">{onboarding.budget} {onboarding.currency} Goal</span>
+            <div className="flex flex-col text-right flex-shrink-0">
+              <span className="text-xs font-black text-slate-800 leading-tight" title={`${onboarding.dietType} diet`}>{onboarding.dietType} Diet</span>
+              <span className="text-[10px] text-[#2E7D32] font-extrabold tracking-wide font-mono leading-none mt-0.5">{targetDailyProtein}g protein / day</span>
             </div>
           </div>
         </div>
@@ -2664,23 +3761,44 @@ export default function App() {
                     <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-[#4CAF50]" /> Active Optimized Shopping List
                     </h2>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">
-                      OPTIMIZED TARGET: {targetDailyProtein * (onboarding?.planningFrequency === 'daily' ? 1 : onboarding?.planningFrequency === 'weekly' ? 7 : 30)}G PROTEIN, {onboarding?.budget} {onboarding?.currency} BUDGET
-                    </p>
+                    {/* Dynamic Responsive Badges (Diet and Grams of protein never cut off) */}
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-700 border border-green-200/50">
+                        Diet: {onboarding?.dietType || 'Normal'}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/50">
+                        Protein Target: {targetDailyProtein * (onboarding?.planningFrequency === 'daily' ? 1 : onboarding?.planningFrequency === 'weekly' ? 7 : 30)}g
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/50">
+                        Budget: {onboarding?.budget} {onboarding?.currency}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button 
                       onClick={handleRefreshShoppingList}
                       disabled={isRefreshingShoppingList}
                       className="text-xs bg-green-50 hover:bg-green-100 disabled:bg-slate-100 text-[#2E7D32] disabled:text-slate-400 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition cursor-pointer disabled:cursor-not-allowed border border-green-200/50"
-                      title="Regenerate shopping list from current meal plan & diet settings"
+                      title={cooldownMsg ? `Cooldown active: ${cooldownMsg} left` : "Regenerate shopping list from current meal plan & diet settings"}
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingShoppingList ? 'animate-spin' : ''}`} />
-                      {isRefreshingShoppingList ? 'Refreshing...' : 'Refresh List'}
+                      {isRefreshingShoppingList ? 'Refreshing...' : cooldownMsg ? `Cooldown: ${cooldownMsg}` : 'Refresh List'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const defaultList = generateDefaultShoppingList(onboarding || tempOnboarding);
+                        setShoppingList(defaultList);
+                        alert("Successfully reset the shopping list with standard recommended items matched to your profile and diet preset!");
+                      }}
+                      className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition border border-amber-200/50 cursor-pointer"
+                      title="Reset shopping list with standard recommended items matching your active diet preset"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Reset List
                     </button>
                     <button 
                       onClick={handleExportCSV}
-                      className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition"
+                      className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" /> CSV Export
                     </button>
@@ -2688,6 +3806,107 @@ export default function App() {
                       HEALTHY COMPATIBLE
                     </span>
                   </div>
+                </div>
+
+                {/* Collapsible Add Custom Product Form */}
+                <div className="mb-4 bg-slate-50 border border-slate-200/60 rounded-2xl p-4">
+                  <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5 mb-2.5">
+                    <PlusCircle className="w-4 h-4 text-[#4CAF50]" /> Add Custom Product manually
+                  </h3>
+                  
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const formData = new FormData(form);
+                    const name = formData.get('name') as string;
+                    const store = formData.get('store') as string;
+                    const price = parseFloat(formData.get('price') as string) || 0;
+                    const protein = parseFloat(formData.get('protein') as string) || 0;
+                    
+                    if (!name.trim()) {
+                      alert("Please enter a product name!");
+                      return;
+                    }
+
+                    // Create a custom FoodProduct
+                    const customProduct: FoodProduct = {
+                      id: "manual_" + Date.now(),
+                      name,
+                      brand: "My Choice",
+                      store,
+                      price,
+                      weight: "1 unit",
+                      protein,
+                      carbs: 0,
+                      fat: 0,
+                      calories: Math.round(protein * 4),
+                      fiber: 0,
+                      sugar: 0,
+                      sodium: 0,
+                      ingredients: "Manually added product",
+                      nutritionLabel: "Custom product",
+                      costPerProteinGram: protein > 0 ? price / protein : 0,
+                      costPerCalorie: price / (protein * 4 || 1),
+                      healthScore: 85,
+                      image: "🛒",
+                      alternatives: [],
+                      category: "Custom Item"
+                    };
+
+                    handleAddProductToList(customProduct);
+                    form.reset();
+                    alert(`Successfully added "${name}" to your shopping list!`);
+                  }} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                    <div className="sm:col-span-4">
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Product Name</label>
+                      <input 
+                        name="name" 
+                        type="text" 
+                        placeholder="e.g. Bio Almond Butter" 
+                        required
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#4CAF50]"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Supermarket</label>
+                      <select 
+                        name="store" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#4CAF50]"
+                      >
+                        {countryConfig.stores.map(st => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Price ({onboarding?.currency || 'USD'})</label>
+                      <input 
+                        name="price" 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="12.99"
+                        required
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#4CAF50]"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Protein (g/100g)</label>
+                      <input 
+                        name="protein" 
+                        type="number" 
+                        placeholder="15" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#4CAF50]"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <button 
+                        type="submit" 
+                        className="w-full bg-[#4CAF50] hover:bg-[#2E7D32] text-white font-black text-xs uppercase tracking-wider py-2 rounded-xl transition shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add to List
+                      </button>
+                    </div>
+                  </form>
                 </div>
 
                 {/* Optimizations priority bar */}
@@ -3011,10 +4230,11 @@ export default function App() {
                 >
                   <RefreshCw className="w-3 h-3" /> Set from Profile
                 </button>
-                <div className="flex flex-col items-end gap-1 font-bold">
-                  <span className="bg-green-900/40 px-2 py-0.5 rounded text-[10px]">Diet: {onboarding.dietType || 'Normal'}</span>
-                  <span className="bg-green-900/40 px-2 py-0.5 rounded text-[9px] opacity-85">Goal: {onboarding.goal.replace('_', ' ')}</span>
-                </div>
+                 <div className="flex flex-col items-end gap-1 font-bold">
+                   <span className="bg-green-900/60 text-white px-2 py-0.5 rounded text-[10px]">Diet: {onboarding.dietType || 'Normal'}</span>
+                   <span className="bg-green-900/60 text-white px-2 py-0.5 rounded text-[10px]">Target: {targetDailyProtein}g Protein</span>
+                   <span className="bg-green-900/60 text-white px-2 py-0.5 rounded text-[9px] opacity-85">Goal: {onboarding.goal.replace('_', ' ')}</span>
+                 </div>
               </div>
               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white opacity-5 rounded-full pointer-events-none"></div>
             </div>
@@ -3355,32 +4575,32 @@ export default function App() {
             {/* Price Comparison Index between stores */}
             <div id="price-comparison-index" className="lg:col-span-4 bg-slate-900 rounded-3xl p-6 text-white flex flex-col justify-between">
               <div>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-2">
                   <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Price Comparison Index</h4>
                   <Store className="w-4 h-4 text-slate-400" />
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 text-xs font-mono text-slate-400 uppercase">{localizeStore('Lidl')}</div>
-                    <div className="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#4CAF50]" style={{ width: '60%' }}></div>
-                    </div>
-                    <span className="text-xs font-bold font-mono">{formatPrice(lidlTotal)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 text-xs font-mono text-slate-400 uppercase">{localizeStore('Kaufland')}</div>
-                    <div className="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-slate-600" style={{ width: '75%' }}></div>
-                    </div>
-                    <span className="text-xs font-bold font-mono">{formatPrice(kauflandTotal)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 text-xs font-mono text-slate-400 uppercase">{localizeStore('Carrefour')}</div>
-                    <div className="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-slate-600" style={{ width: '90%' }}></div>
-                    </div>
-                    <span className="text-xs font-bold font-mono">{formatPrice(carrefourTotal)}</span>
-                  </div>
+                {!hasItems && (
+                  <p className="text-[10px] text-amber-400 font-semibold mb-4 leading-normal">
+                    ⚠️ Basket empty. Showing standard healthy basket estimates. Updates as you add products!
+                  </p>
+                )}
+                <div className={`space-y-3 ${!hasItems ? 'mt-2' : 'mt-4'}`}>
+                  {storeComparisonList.map((st, sidx) => {
+                    const maxVal = Math.max(...storeComparisonList.map(item => item.total));
+                    const pct = maxVal > 0 ? Math.round((st.total / maxVal) * 100) : 0;
+                    return (
+                      <div key={sidx} className="flex items-center gap-3">
+                        <div className="w-20 text-xs font-bold text-slate-300 truncate" title={localizeStore(st.name)}>{localizeStore(st.name)}</div>
+                        <div className="flex-1 h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full transition-all duration-500 rounded-full" 
+                            style={{ width: `${pct}%`, backgroundColor: st.color }}
+                          ></div>
+                        </div>
+                        <span className="text-xs font-bold font-mono text-white">{formatPrice(st.total)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-slate-800">
@@ -3827,7 +5047,7 @@ export default function App() {
                           <button
                             onClick={() => {
                               if (msg.shoppingList) {
-                                setShoppingList(msg.shoppingList);
+                                setShoppingList(recalculateShoppingListMetrics(msg.shoppingList.items || []));
                                 if (msg.mealPlan) setMealPlan(msg.mealPlan);
                                 alert('Success! Synced the shopping list and meal recipes onto your dashboard.');
                               }
