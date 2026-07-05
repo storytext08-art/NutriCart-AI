@@ -2530,50 +2530,6 @@ export default function App() {
       }
     };
 
-    const handleBypassDemo = () => {
-      const mockUser = {
-        uid: "demo-user-123",
-        email: "demo@nutricartai.com",
-        displayName: "Demo User",
-        emailVerified: true,
-        isAnonymous: false,
-        metadata: {},
-        providerData: [],
-      } as any as FirebaseUser;
-      
-      setUser(mockUser);
-      setIsDataLoaded(true);
-      
-      const demoOnboarding: OnboardingData = {
-        age: 30,
-        gender: 'male',
-        height: 180,
-        weight: 80,
-        goal: 'lose_weight',
-        activityLevel: 'lightly_active',
-        preferredStores: ['Lidl', 'Kaufland'],
-        country: 'Romania',
-        currency: 'lei',
-        budget: 350,
-        foodAllergies: [],
-        foodsDislike: [],
-        foodsLove: ['Avocado', 'Salmon', 'Greek Yogurt'],
-        dietType: 'High Protein',
-        planningFrequency: 'weekly'
-      };
-      
-      setTempOnboarding(demoOnboarding);
-      setOnboarding(demoOnboarding);
-      setHasExistingProfile(true);
-      setTargetDailyCalories(2000);
-      setTargetDailyProtein(150);
-      setTargetDailyCarbs(180);
-      setTargetDailyFat(60);
-      
-      setShoppingList(generateDefaultShoppingList(demoOnboarding));
-      setMealPlan(getMealPlanForDiet('High Protein'));
-    };
-
     return (
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-[#F8F9FA] text-slate-800'} flex flex-col justify-between font-sans`}>
         <header className={`h-16 border-b px-6 flex items-center justify-between transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
@@ -2671,25 +2627,6 @@ export default function App() {
                   </svg>
                   <span>Continue with Google</span>
                 </button>
-
-                <div className="relative my-4 flex items-center justify-center">
-                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
-                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
-                    or test instantly
-                  </span>
-                </div>
-
-                <button
-                  onClick={handleBypassDemo}
-                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 border cursor-pointer active:scale-[0.98] ${
-                    isDarkMode 
-                      ? 'bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-800/40 text-emerald-300' 
-                      : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 text-[#2E7D32]'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4 text-[#4CAF50] animate-pulse" />
-                  <span>Access with Demo Account (Bypass)</span>
-                </button>
               </div>
             )}
 
@@ -2715,19 +2652,9 @@ export default function App() {
                 </div>
 
                 {authError && (
-                  <div className="space-y-2">
-                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-semibold flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span>{authError}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleBypassDemo}
-                      className="w-full text-xs font-bold text-emerald-600 hover:text-emerald-750 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400 py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-emerald-100"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Troubleshoot: Use Instant Demo Account
-                    </button>
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>{authError}</span>
                   </div>
                 )}
 
@@ -2836,19 +2763,9 @@ export default function App() {
                 </div>
 
                 {authError && (
-                  <div className="space-y-2">
-                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-semibold flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span>{authError}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleBypassDemo}
-                      className="w-full text-xs font-bold text-emerald-600 hover:text-emerald-750 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400 py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-emerald-100"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Troubleshoot: Use Instant Demo Account
-                    </button>
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>{authError}</span>
                   </div>
                 )}
 
@@ -3683,6 +3600,11 @@ export default function App() {
             <button 
               id="settings-btn"
               onClick={() => {
+                if (onboarding) {
+                  setSettingsOnboarding({ ...onboarding });
+                } else if (tempOnboarding) {
+                  setSettingsOnboarding({ ...tempOnboarding });
+                }
                 setIsSettingsModalOpen(true);
               }} 
               title="Edit Profile & Diet settings"
