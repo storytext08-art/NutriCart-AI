@@ -1417,6 +1417,7 @@ export default function App() {
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number>(1);
   const [hasExistingProfile, setHasExistingProfile] = useState<boolean>(false);
+  const [originalOnboardingBackup, setOriginalOnboardingBackup] = useState<OnboardingData | null>(null);
   const [tempOnboarding, setTempOnboarding] = useState<OnboardingData>({
     age: 0,
     gender: '',
@@ -3362,18 +3363,32 @@ export default function App() {
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between">
-              {onboardingStep > 1 ? (
-                <button 
-                  type="button" 
-                  onClick={() => setOnboardingStep(onboardingStep - 1)}
-                  className="bg-slate-100 text-slate-600 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm hover:bg-slate-200 transition"
-                >
-                  {dict.back}
-                </button>
-              ) : (
-                <div />
-              )}
+            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+              <div className="flex gap-2">
+                {onboardingStep > 1 ? (
+                  <button 
+                    type="button" 
+                    onClick={() => setOnboardingStep(onboardingStep - 1)}
+                    className="bg-slate-100 text-slate-600 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm hover:bg-slate-200 transition"
+                  >
+                    {dict.back}
+                  </button>
+                ) : (
+                  <div />
+                )}
+                {originalOnboardingBackup && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setOnboarding(originalOnboardingBackup);
+                      setOriginalOnboardingBackup(null);
+                    }}
+                    className="bg-rose-50 text-rose-600 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm hover:bg-rose-100 transition border border-rose-200 cursor-pointer"
+                  >
+                    Cancel Editing
+                  </button>
+                )}
+              </div>
 
               {onboardingStep < 3 ? (
                 <button 
@@ -3674,20 +3689,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans text-slate-800">
       {/* Top Navigation */}
-      <nav className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#4CAF50] rounded-xl flex items-center justify-center shadow-lg shadow-green-100">
-            <ShoppingCart className="w-6 h-6 text-white" />
+      <nav className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4CAF50] rounded-xl flex items-center justify-center shadow-lg shadow-green-100 shrink-0">
+            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <span className="text-2xl font-black tracking-tight text-[#2E7D32]">
+          <span className="text-lg sm:text-2xl font-black tracking-tight text-[#2E7D32] shrink-0">
             NutriCart<span className="text-slate-400">AI</span>
           </span>
-          <span className="hidden sm:inline text-xs font-semibold bg-green-50 text-green-700 px-2 py-0.5 rounded">
+          <span className="hidden lg:inline text-xs font-semibold bg-green-50 text-green-700 px-2 py-0.5 rounded">
             Live {onboarding.country} Edition
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-4">
           <div className="hidden md:flex gap-4 text-sm font-bold text-slate-500">
             <button 
               onClick={() => setActiveTab('dashboard')} 
@@ -3726,17 +3741,17 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
 
             <button 
               id="theme-toggle-btn"
               onClick={() => setIsDarkMode(!isDarkMode)}
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              className="p-2 hover:bg-slate-100 rounded-xl text-[#4CAF50] hover:text-[#2E7D32] transition flex items-center justify-center"
+              className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-xl text-[#4CAF50] hover:text-[#2E7D32] transition flex items-center justify-center shrink-0"
             >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {isDarkMode ? <Sun className="w-4.5 h-4.5 sm:w-5 sm:h-5" /> : <Moon className="w-4.5 h-4.5 sm:w-5 sm:h-5" />}
             </button>
-            <div className="h-8 w-px bg-slate-200"></div>
+            <div className="h-6 sm:h-8 w-px bg-slate-200"></div>
 
             <button 
               id="settings-btn"
@@ -3758,29 +3773,31 @@ export default function App() {
                   dietType: 'High Protein',
                   planningFrequency: 'weekly'
                 };
-                setSettingsOnboarding({ ...activeOnb });
-                setIsSettingsModalOpen(true);
+                setOriginalOnboardingBackup({ ...activeOnb });
+                setTempOnboarding({ ...activeOnb });
+                setOnboardingStep(1);
+                setOnboarding(null);
               }} 
               title="Edit Profile & Diet settings"
-              className="p-2 hover:bg-[#4CAF50]/10 hover:text-[#2E7D32] text-[#4CAF50] rounded-xl transition flex items-center gap-1.5 font-black text-xs border border-transparent hover:border-[#4CAF50]/20 cursor-pointer"
+              className="p-1.5 sm:p-2 hover:bg-[#4CAF50]/10 hover:text-[#2E7D32] text-[#4CAF50] rounded-xl transition flex items-center gap-1 font-black text-xs border border-transparent hover:border-[#4CAF50]/20 cursor-pointer shrink-0"
             >
-              <Settings className="w-4.5 h-4.5" />
-              <span>Settings</span>
+              <Settings className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+              <span className="hidden sm:inline">Settings</span>
             </button>
-            <div className="h-8 w-px bg-slate-200"></div>
+            <div className="h-6 sm:h-8 w-px bg-slate-200"></div>
 
             <button 
               onClick={async () => {
                 await signOut(auth);
               }} 
               title="Log Out"
-              className="p-2 hover:bg-rose-50 hover:text-rose-700 text-slate-400 transition flex items-center gap-1.5 font-bold text-xs rounded-xl border border-transparent hover:border-rose-100"
+              className="p-1.5 sm:p-2 hover:bg-rose-50 hover:text-rose-700 text-slate-400 transition flex items-center gap-1 font-bold text-xs rounded-xl border border-transparent hover:border-rose-100 shrink-0"
             >
               <LogOut className="w-4 h-4 text-rose-500" />
               <span className="hidden sm:inline text-rose-600">Log Out</span>
             </button>
-            <div className="h-8 w-px bg-slate-200"></div>
-            <div className="flex flex-col text-right flex-shrink-0">
+            <div className="h-6 sm:h-8 w-px bg-slate-200 hidden md:block"></div>
+            <div className="hidden md:flex flex-col text-right flex-shrink-0">
               <span className="text-xs font-black text-slate-800 leading-tight" title={`${onboarding.dietType} diet`}>{onboarding.dietType} Diet</span>
               <span className="text-[10px] text-[#2E7D32] font-extrabold tracking-wide font-mono leading-none mt-0.5">{targetDailyProtein}g protein / day</span>
             </div>
@@ -4023,8 +4040,8 @@ export default function App() {
                   ))}
                 </div>
 
-                {/* Shopping items list table */}
-                <div className="w-full overflow-x-auto border border-slate-100 rounded-3xl bg-white shadow-inner p-1">
+                {/* Shopping items list table - Desktop only */}
+                <div className="hidden md:block w-full overflow-x-auto border border-slate-100 rounded-3xl bg-white shadow-inner p-1">
                   <table className="w-full text-sm min-w-[850px] border-collapse">
                     <thead>
                       <tr className="text-slate-400 border-b border-slate-100 uppercase text-[10px] tracking-wider font-semibold">
@@ -4163,6 +4180,126 @@ export default function App() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Shopping Items Cards - Mobile only */}
+                <div className="md:hidden space-y-3">
+                  {shoppingList.items.filter(item => {
+                    const activeOnb = onboarding || tempOnboarding;
+                    return !isAllergicOrDisliked(item.product, activeOnb?.foodAllergies || [], activeOnb?.foodsDislike || []);
+                  }).map((item, idx) => (
+                    <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-sm hover:border-green-200/50 transition">
+                      {/* Emoji, Title and Store */}
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl shrink-0" role="img" aria-label="product icon">
+                          {item.product.image && item.product.image !== '🛒' ? item.product.image : getEmojiForFood(item.product.name)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-800 leading-tight text-sm break-words">{localizeProductName(item.product.name)}</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-1">
+                            {localizeBrand(item.product.brand)} • {item.product.weight} • <span className="text-[#2E7D32] font-extrabold">{localizeStore(item.product.store)}</span>
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 items-center mt-1.5">
+                            <span className="text-[9px] text-[#2E7D32] font-black bg-green-50 text-green-700 px-1.5 py-0.5 rounded inline-block">
+                              {formatConvertedAmount(item, onboarding?.dietType || 'Normal')}
+                            </span>
+                            <span className="text-[9px] text-slate-500 font-black bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded inline-block">
+                              Protein: {item.product.protein}g/100g
+                            </span>
+                          </div>
+                        </div>
+                        {/* Delete & Add Button Group */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button 
+                            onClick={() => {
+                              handleAddIndividualToCart(item.product, item.quantity);
+                              alert(onboarding?.country === 'Romania' 
+                                ? `Am adăugat ${localizeProductName(item.product.name)} în coș!`
+                                : `Added ${localizeProductName(item.product.name)} to your Cart!`);
+                            }}
+                            className="text-[#4CAF50] hover:text-[#2E7D32] p-1.5 rounded-xl hover:bg-green-50/50 transition"
+                            title="Add to Cart"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleRemoveItem(item.product.id)}
+                            className="text-slate-300 hover:text-red-500 p-1.5 rounded-xl hover:bg-red-50/50 transition"
+                            title="Delete item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Swapping / Toggle Consume / Qty Selector / Price */}
+                      <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        {/* Quantity controls */}
+                        <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-1">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateItemQuantity(item.product.id, item.quantity - 1)}
+                            className="w-5 h-5 flex items-center justify-center rounded-md bg-white hover:bg-slate-200 text-slate-600 border border-[#dee2e6] text-xs font-black transition active:scale-95"
+                          >
+                            -
+                          </button>
+                          <span className="font-mono font-bold text-slate-700 min-w-[20px] text-center text-xs">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateItemQuantity(item.product.id, item.quantity + 1)}
+                            className="w-5 h-5 flex items-center justify-center rounded-md bg-white hover:bg-slate-200 text-slate-600 border border-[#dee2e6] text-xs font-black transition active:scale-95"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Daily/Weekly frequency toggle */}
+                        <div className="inline-flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleConsumeType(item.product.id, 'daily')}
+                            className={`text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wide transition-all ${
+                              (item.consumeType || 'daily') === 'daily'
+                                ? 'bg-[#4CAF50] text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                          >
+                            Daily
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleConsumeType(item.product.id, 'weekly')}
+                            className={`text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wide transition-all ${
+                              (item.consumeType || 'daily') === 'weekly'
+                                ? 'bg-[#4CAF50] text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                          >
+                            Weekly
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-right">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Price</p>
+                          <p className="font-extrabold text-[#2E7D32] text-sm">~ {formatPrice(item.totalCost)}</p>
+                        </div>
+                      </div>
+
+                      {/* Smart Swap button */}
+                      {item.product.alternatives.length > 0 && (
+                        <div className="pt-2 border-t border-dashed border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => handleSwapItem(item.product.id, item.product)}
+                            className="w-full text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/30 py-1.5 rounded-xl font-black uppercase tracking-wider transition text-center"
+                          >
+                            🔄 Swap to {localizeProductName(item.product.alternatives[0])}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 {/* Price accuracy alert banner */}
@@ -6006,7 +6143,8 @@ export default function App() {
                 
                 {/* Cart Items List */}
                 <div className="lg:col-span-8 space-y-4">
-                  <div className="overflow-x-auto border border-slate-100 rounded-3xl bg-white shadow-inner p-1">
+                  {/* Desktop Layout - Table view */}
+                  <div className="hidden md:block overflow-x-auto border border-slate-100 rounded-3xl bg-white shadow-inner p-1">
                     <table className="w-full text-sm min-w-[600px] border-collapse">
                       <thead>
                         <tr className="text-slate-400 border-b border-slate-100 uppercase text-[10px] tracking-wider font-semibold">
@@ -6102,6 +6240,85 @@ export default function App() {
                         })}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile Layout - Card view */}
+                  <div className="md:hidden space-y-3">
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-200/50 mb-2">
+                      <span className="text-xs font-bold text-slate-500">Select All Items</span>
+                      <input
+                        type="checkbox"
+                        checked={cartItems.every(item => item.checked)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setCartItems(prev => prev.map(i => ({ ...i, checked })));
+                        }}
+                        className="w-5 h-5 rounded text-[#4CAF50] border-slate-300 focus:ring-[#4CAF50] cursor-pointer"
+                      />
+                    </div>
+                    {cartItems.map((item) => {
+                      const activeOnb = onboarding || tempOnboarding;
+                      const userCountry = activeOnb.country || 'Romania';
+                      const countryConfig = COUNTRIES[userCountry] || COUNTRIES['Romania'];
+                      const rate = countryConfig.rate;
+                      const localItemPrice = item.product.price * rate * item.quantity;
+
+                      return (
+                        <div key={item.id} className={`bg-white border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-sm hover:border-green-200/50 transition ${item.checked ? 'bg-green-50/10 border-green-200/40' : ''}`}>
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={!!item.checked}
+                              onChange={() => handleToggleCartItemCheck(item.id)}
+                              className="w-5 h-5 rounded text-[#4CAF50] border-slate-300 focus:ring-[#4CAF50] cursor-pointer mt-1"
+                            />
+                            <span className="text-3xl shrink-0" role="img" aria-label="product icon">
+                              {item.product.image && item.product.image !== '🛒' ? item.product.image : getEmojiForFood(item.product.name)}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-bold text-slate-800 leading-tight text-sm break-words ${item.checked ? 'line-through text-slate-400' : ''}`}>
+                                {localizeProductName(item.product.name)}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-bold mt-1">
+                                {localizeBrand(item.product.brand)} • {item.product.weight} • <span className="text-[#2E7D32] font-black">{localizeStore(item.product.store)}</span>
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveFromCart(item.id)}
+                              className="text-slate-300 hover:text-red-500 p-1.5 rounded-xl hover:bg-red-50/50 transition shrink-0"
+                              title="Remove item"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-3">
+                            <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-1">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateCartItemQty(item.id, item.quantity - 1)}
+                                className="w-5 h-5 flex items-center justify-center rounded-md bg-white hover:bg-slate-200 text-slate-600 border border-[#dee2e6] text-xs font-black transition active:scale-95"
+                              >
+                                -
+                              </button>
+                              <span className="font-mono font-bold text-slate-700 min-w-[20px] text-center text-xs">{item.quantity}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateCartItemQty(item.id, item.quantity + 1)}
+                                className="w-5 h-5 flex items-center justify-center rounded-md bg-white hover:bg-slate-200 text-slate-600 border border-[#dee2e6] text-xs font-black transition active:scale-95"
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-[10px] text-slate-400 font-bold uppercase">Price</p>
+                              <p className="font-extrabold text-[#2E7D32] text-sm">~ {formatPriceLocal(localItemPrice)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
