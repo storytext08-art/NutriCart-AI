@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db, googleProvider } from './firebase';
+import { auth, db } from './firebase';
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithPopup, 
   signOut,
   User as FirebaseUser,
-  updateProfile,
-  GoogleAuthProvider,
-  signInWithCredential
+  updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
