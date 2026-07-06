@@ -927,6 +927,64 @@ export const getRecommendedDiet = (age: number, weightKg: number, heightCm: numb
   };
 };
 
+export const getEmojiForFood = (name: string): string => {
+  if (!name) return '🛒';
+  const n = name.toLowerCase();
+  
+  if (n.includes('pui') || n.includes('chicken') || n.includes('poultry') || n.includes('aripi') || n.includes('pulpe')) return '🍗';
+  if (n.includes('curcan') || n.includes('turkey')) return '🦃';
+  if (n.includes('porc') || n.includes('pork') || n.includes('bacon') || n.includes('șuncă') || n.includes('sunca') || n.includes('mici') || n.includes('cârnat') || n.includes('carnat')) return '🥓';
+  if (n.includes('vită') || n.includes('vita') || n.includes('beef') || n.includes('steak') || n.includes('ribeye') || n.includes('sirloin')) return '🥩';
+  if (n.includes('somon') || n.includes('salmon') || n.includes('pește') || n.includes('peste') || n.includes('fish') || n.includes('ton') || n.includes('tuna') || n.includes('sardine') || n.includes('macrou') || n.includes('seafood') || n.includes('creveți') || n.includes('creveti')) return '🐟';
+  if (n.includes('ou') || n.includes('ouă') || n.includes('oua') || n.includes('egg')) return '🥚';
+  if (n.includes('brânză') || n.includes('branza') || n.includes('cheese') || n.includes('cașcaval') || n.includes('cascaval') || n.includes('halloumi') || n.includes('mozzarella') || n.includes('parmezan') || n.includes('cottage') || n.includes('urda') || n.includes('urdă') || n.includes('feta')) return '🧀';
+  if (n.includes('lapte') || n.includes('milk')) return '🥛';
+  if (n.includes('iaurt') || n.includes('yogurt') || n.includes('greek') || n.includes('sana') || n.includes('kefir')) return '🥛';
+  if (n.includes('unt') || n.includes('butter') || n.includes('margarină') || n.includes('margarina')) return '🧈';
+  if (n.includes('pâine') || n.includes('paine') || n.includes('bread') || n.includes('chiflă') || n.includes('chifla') || n.includes('toast') || n.includes('sourdough')) return '🍞';
+  if (n.includes('lipie') || n.includes('tortilla') || n.includes('cracker') || n.includes('biscuit')) return '🫓';
+  if (n.includes('orez') || n.includes('rice')) return '🍚';
+  if (n.includes('ovăz') || n.includes('ovaz') || n.includes('oats') || n.includes('cereale') || n.includes('muesli') || n.includes('fulgi')) return '🥣';
+  if (n.includes('quinoa') || n.includes('hrișcă') || n.includes('hrisca') || n.includes('bulgur')) return '🌾';
+  if (n.includes('pastă') || n.includes('pasta') || n.includes('paste') || n.includes('macaroane') || n.includes('spaghete')) return '🍝';
+  if (n.includes('avocado')) return '🥑';
+  if (n.includes('măr') || n.includes('mar') || n.includes('apple')) return '🍎';
+  if (n.includes('banană') || n.includes('banana') || n.includes('banane')) return '🍌';
+  if (n.includes('roșie') || n.includes('rosie') || n.includes('tomato') || n.includes('cherry')) return '🍅';
+  if (n.includes('castravete') || n.includes('castraveti') || n.includes('cucumber')) return '🥒';
+  if (n.includes('morcov') || n.includes('carrot')) return '🥕';
+  if (n.includes('cartof') || n.includes('potato') || n.includes('sweet potato')) return '🥔';
+  if (n.includes('broccoli') || n.includes('conopidă') || n.includes('conopida')) return '🥦';
+  if (n.includes('ceapă') || n.includes('ceapa') || n.includes('onion')) return '🧅';
+  if (n.includes('usturoi') || n.includes('garlic')) return '🧄';
+  if (n.includes('măsline') || n.includes('masline') || n.includes('olive')) return '🫒';
+  if (n.includes('capsuni') || n.includes('căpșuni') || n.includes('strawberry') || n.includes('berries') || n.includes('forest') || n.includes('afine') || n.includes('zmeură') || n.includes('zmeura') || n.includes('mure')) return '🍓';
+  if (n.includes('portocală') || n.includes('portocala') || n.includes('orange') || n.includes('lămâie') || n.includes('lamai') || n.includes('lemon') || n.includes('citrice')) return '🍊';
+  if (n.includes('struguri') || n.includes('grapes')) return '🍇';
+  if (n.includes('ciuperci') || n.includes('ciupercă') || n.includes('mushroom')) return '🍄';
+  if (n.includes('spanac') || n.includes('spinach') || n.includes('salată') || n.includes('salata') || n.includes('salad') || n.includes('varză') || n.includes('varza') || n.includes('kale') || n.includes('rucola') || n.includes('frunze')) return '🥬';
+  if (n.includes('fasole') || n.includes('beans') || n.includes('linte') || n.includes('lentils') || n.includes('năut') || n.includes('naut') || n.includes('chickpeas') || n.includes('mazăre') || n.includes('mazare') || n.includes('peas')) return '🫘';
+  if (n.includes('nucă') || n.includes('nuca') || n.includes('walnut') || n.includes('almond') || n.includes('migdale') || n.includes('alune') || n.includes('peanut') || n.includes('pecan') || n.includes('fistic') || n.includes('seeds') || n.includes('semințe') || n.includes('seminte') || n.includes('caju') || n.includes('hazelnut')) return '🥜';
+  if (n.includes('ulei') || n.includes('oil')) return '🫒';
+  if (n.includes('miere') || n.includes('honey')) return '🍯';
+  if (n.includes('apă') || n.includes('apa') || n.includes('water')) return '💧';
+  if (n.includes('cafea') || n.includes('coffee')) return '☕';
+  if (n.includes('ceai') || n.includes('tea')) return '🍵';
+  if (n.includes('suc') || n.includes('juice') || n.includes('limonadă') || n.includes('băutură') || n.includes('bautura')) return '🥤';
+  if (n.includes('bere') || n.includes('beer')) return '🍺';
+  if (n.includes('vin') || n.includes('wine')) return '🍷';
+  if (n.includes('tofu') || n.includes('tempeh') || n.includes('soia') || n.includes('soy')) return '🫘';
+  if (n.includes('pesto') || n.includes('sos') || n.includes('sauce') || n.includes('ketchup') || n.includes('muștar') || n.includes('mustar') || n.includes('maioneză') || n.includes('maioneza')) return '🥫';
+  if (n.includes('ciocolată') || n.includes('ciocolata') || n.includes('chocolate')) return '🍫';
+  if (n.includes('biscuit') || n.includes('cookies') || n.includes('fursec')) return '🍪';
+  if (n.includes('dulce') || n.includes('cake') || n.includes('prăjitură') || n.includes('prajitura') || n.includes('desert') || n.includes('gogoși') || n.includes('gogosi')) return '🍰';
+  if (n.includes('protein') || n.includes('pudră') || n.includes('pudra') || n.includes('whey')) return '💪';
+  if (n.includes('conservă') || n.includes('conserva') || n.includes('canned')) return '🥫';
+  if (n.includes('sare') || n.includes('salt') || n.includes('piper') || n.includes('condiment') || n.includes('oregano') || n.includes('bicarbonat') || n.includes('praf')) return '🧂';
+
+  return '🛒';
+};
+
 const isAllergicOrDisliked = (product: FoodProduct, allergies: string[], dislikes: string[]): boolean => {
   if (!product) return false;
   const nameLower = product.name.toLowerCase();
@@ -1326,6 +1384,8 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+
+  const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
 
   // Firebase Auth states
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -2521,8 +2581,14 @@ export default function App() {
         let msg = 'Google authentication failed. Please try email and password.';
         if (err.code === 'auth/operation-not-allowed') {
           msg = 'Google sign-in is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method tab, click "Add new provider", and enable "Google" sign-in.';
+        } else if (err.code === 'auth/unauthorized-domain') {
+          msg = `This domain (${window.location.hostname}) is not authorized for Google Sign-In in your Firebase Project. Please add it to the "Authorized domains" list under Firebase Console -> Authentication -> Settings tab.`;
+        } else if (err.code === 'auth/popup-blocked') {
+          msg = 'The Google login popup was blocked by your browser. Please allow popups for this site or open the app in a new tab first.';
+        } else if (err.code === 'auth/internal-error' || err.message?.includes('storage') || err.message?.includes('cookie')) {
+          msg = 'Google Sign-In failed due to browser cookie or storage restrictions. If you are in the AI Studio preview iframe, please open the app in a New Tab (button in the top-right of your screen) to sign in safely!';
         } else if (err.message) {
-          msg = `Google authentication failed: ${err.message}`;
+          msg = `Google authentication failed: ${err.message}. If you are in the AI Studio preview, try opening the app in a New Tab using the button in the top-right!`;
         }
         setAuthError(msg);
       } finally {
@@ -2627,6 +2693,12 @@ export default function App() {
                   </svg>
                   <span>Continue with Google</span>
                 </button>
+
+                {isInIframe && (
+                  <p className="text-[10px] text-amber-600 font-bold text-center mt-2 bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-100 dark:border-amber-900/30 leading-normal">
+                    ⚠️ <strong>Iframe Notice:</strong> Browser security may block Google Sign-In popups in the preview. Click the <strong>Open in New Tab</strong> button (top-right) if popups fail!
+                  </p>
+                )}
               </div>
             )}
 
@@ -2725,6 +2797,12 @@ export default function App() {
                   </svg>
                   <span>Log In with Google</span>
                 </button>
+
+                {isInIframe && (
+                  <p className="text-[10px] text-amber-600 font-bold text-center mt-2 bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-100 dark:border-amber-900/30 leading-normal">
+                    ⚠️ <strong>Iframe Notice:</strong> Google Sign-In may be blocked by iframe cross-origin restrictions. Please click <strong>Open in New Tab</strong> (top-right) if popups fail!
+                  </p>
+                )}
 
                 <div className="mt-6 text-center">
                   <button
@@ -2872,6 +2950,12 @@ export default function App() {
                   </svg>
                   <span>Sign Up with Google</span>
                 </button>
+
+                {isInIframe && (
+                  <p className="text-[10px] text-amber-600 font-bold text-center mt-2 bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-100 dark:border-amber-900/30 leading-normal">
+                    ⚠️ <strong>Iframe Notice:</strong> Google Sign-In may be blocked by iframe cross-origin restrictions. Please click <strong>Open in New Tab</strong> (top-right) if popups fail!
+                  </p>
+                )}
 
                 <div className="mt-6 text-center">
                   <button
@@ -3600,18 +3684,31 @@ export default function App() {
             <button 
               id="settings-btn"
               onClick={() => {
-                if (onboarding) {
-                  setSettingsOnboarding({ ...onboarding });
-                } else if (tempOnboarding) {
-                  setSettingsOnboarding({ ...tempOnboarding });
-                }
+                const activeOnb = onboarding || tempOnboarding || {
+                  age: 30,
+                  gender: 'male',
+                  height: 180,
+                  weight: 80,
+                  goal: 'lose_weight',
+                  activityLevel: 'lightly_active',
+                  preferredStores: ['Lidl', 'Kaufland'],
+                  country: 'Romania',
+                  currency: 'lei',
+                  budget: 350,
+                  foodAllergies: [],
+                  foodsDislike: [],
+                  foodsLove: ['Avocado', 'Salmon', 'Greek Yogurt'],
+                  dietType: 'High Protein',
+                  planningFrequency: 'weekly'
+                };
+                setSettingsOnboarding({ ...activeOnb });
                 setIsSettingsModalOpen(true);
               }} 
               title="Edit Profile & Diet settings"
-              className="p-2 hover:bg-[#4CAF50]/10 hover:text-[#2E7D32] text-[#4CAF50] rounded-xl transition flex items-center gap-1.5 font-black text-xs border border-transparent hover:border-[#4CAF50]/20"
+              className="p-2 hover:bg-[#4CAF50]/10 hover:text-[#2E7D32] text-[#4CAF50] rounded-xl transition flex items-center gap-1.5 font-black text-xs border border-transparent hover:border-[#4CAF50]/20 cursor-pointer"
             >
-              <User className="w-4.5 h-4.5" />
-              <span>Account</span>
+              <Settings className="w-4.5 h-4.5" />
+              <span>Settings</span>
             </button>
             <div className="h-8 w-px bg-slate-200"></div>
 
@@ -3770,7 +3867,7 @@ export default function App() {
                       costPerProteinGram: protein > 0 ? price / protein : 0,
                       costPerCalorie: price / (protein * 4 || 1),
                       healthScore: 85,
-                      image: "🛒",
+                      image: getEmojiForFood(name),
                       alternatives: [],
                       category: "Custom Item"
                     };
@@ -3895,7 +3992,7 @@ export default function App() {
                       }).map((item, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/30 transition group">
                           <td className="py-4 pl-4 flex items-center gap-3 font-medium">
-                            <span className="text-2xl" role="img" aria-label="product icon">{item.product.image || '🛒'}</span>
+                            <span className="text-2xl" role="img" aria-label="product icon">{item.product.image && item.product.image !== '🛒' ? item.product.image : getEmojiForFood(item.product.name)}</span>
                             <div>
                               <p className="font-bold text-slate-800 leading-tight">{localizeProductName(item.product.name)}</p>
                               <p className="text-[10px] text-slate-400 font-bold mt-1">{localizeBrand(item.product.brand)} • {item.product.weight}</p>
@@ -5085,8 +5182,9 @@ export default function App() {
 
                   <div className="flex flex-wrap gap-2 mb-2">
                     {item.meal.shoppingIngredients.map((ing, idx) => (
-                      <span key={idx} className="text-[10px] bg-green-50 text-[#2E7D32] border border-green-100 px-2 py-0.5 rounded-lg font-bold">
-                        {ing}
+                      <span key={idx} className="text-[10px] bg-green-50 text-[#2E7D32] border border-green-100 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5 shadow-sm shadow-green-950/5">
+                        <span className="text-xs">{getEmojiForFood(ing)}</span>
+                        <span>{ing}</span>
                       </span>
                     ))}
                   </div>
@@ -5625,7 +5723,7 @@ export default function App() {
                                 />
                               </td>
                               <td className="py-4 flex items-center gap-3 font-medium">
-                                <span className="text-2xl" role="img" aria-label="product icon">{item.product.image || '🛒'}</span>
+                                <span className="text-2xl" role="img" aria-label="product icon">{item.product.image && item.product.image !== '🛒' ? item.product.image : getEmojiForFood(item.product.name)}</span>
                                 <div>
                                   <p className={`font-bold text-slate-800 leading-tight ${item.checked ? 'line-through text-slate-400' : ''}`}>
                                     {localizeProductName(item.product.name)}
