@@ -15,5 +15,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app, "ai-studio-nutricartai-b473500c-970d-46cf-bcd9-aac0bee75072");
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export { app, auth, db, googleProvider };
