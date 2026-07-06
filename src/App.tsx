@@ -2571,6 +2571,49 @@ export default function App() {
       }
     };
 
+    const handleBypassDemo = () => {
+      const mockUser = {
+        uid: "demo-user-123",
+        email: "demo@nutricartai.com",
+        displayName: "Demo User",
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+      } as any as FirebaseUser;
+      
+      setUser(mockUser);
+      
+      const demoOnboarding: OnboardingData = {
+        age: 30,
+        gender: 'male',
+        height: 180,
+        weight: 80,
+        goal: 'lose_weight',
+        activityLevel: 'lightly_active',
+        preferredStores: ['Lidl', 'Kaufland'],
+        country: 'Romania',
+        currency: 'lei',
+        budget: 350,
+        foodAllergies: [],
+        foodsDislike: [],
+        foodsLove: ['Avocado', 'Salmon', 'Greek Yogurt'],
+        dietType: 'High Protein',
+        planningFrequency: 'weekly'
+      };
+      
+      setTempOnboarding(demoOnboarding);
+      setOnboarding(demoOnboarding);
+      setHasExistingProfile(true);
+      setTargetDailyCalories(2000);
+      setTargetDailyProtein(150);
+      setTargetDailyCarbs(180);
+      setTargetDailyFat(60);
+      
+      setShoppingList(generateDefaultShoppingList(demoOnboarding));
+      setMealPlan(getMealPlanForDiet('High Protein'));
+    };
+
     const handleGoogleSignIn = async () => {
       setAuthError('');
       setAuthSubmitting(true);
@@ -2699,6 +2742,26 @@ export default function App() {
                     ⚠️ <strong>Iframe Notice:</strong> Browser security may block Google Sign-In popups in the preview. Click the <strong>Open in New Tab</strong> button (top-right) if popups fail!
                   </p>
                 )}
+
+                <div className="relative my-4 flex items-center justify-center">
+                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
+                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
+                    or test instantly
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBypassDemo}
+                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 border cursor-pointer active:scale-[0.98] ${
+                    isDarkMode 
+                      ? 'bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-800/40 text-emerald-300 shadow-sm' 
+                      : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 text-[#2E7D32] shadow-sm'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-[#4CAF50] animate-pulse" />
+                  <span>Access instantly with Guest Demo Account</span>
+                </button>
               </div>
             )}
 
@@ -2803,6 +2866,19 @@ export default function App() {
                     ⚠️ <strong>Iframe Notice:</strong> Google Sign-In may be blocked by iframe cross-origin restrictions. Please click <strong>Open in New Tab</strong> (top-right) if popups fail!
                   </p>
                 )}
+
+                <button
+                  type="button"
+                  onClick={handleBypassDemo}
+                  className={`w-full py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 border cursor-pointer active:scale-[0.98] mt-4 ${
+                    isDarkMode 
+                      ? 'bg-emerald-950/20 hover:bg-emerald-900/20 border-emerald-900/40 text-emerald-400' 
+                      : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 text-[#2E7D32]'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#4CAF50] animate-pulse" />
+                  <span>Troubleshoot: Log In as Guest Demo Account</span>
+                </button>
 
                 <div className="mt-6 text-center">
                   <button
@@ -2956,6 +3032,19 @@ export default function App() {
                     ⚠️ <strong>Iframe Notice:</strong> Google Sign-In may be blocked by iframe cross-origin restrictions. Please click <strong>Open in New Tab</strong> (top-right) if popups fail!
                   </p>
                 )}
+
+                <button
+                  type="button"
+                  onClick={handleBypassDemo}
+                  className={`w-full py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 border cursor-pointer active:scale-[0.98] mt-4 ${
+                    isDarkMode 
+                      ? 'bg-emerald-950/20 hover:bg-emerald-900/20 border-emerald-900/40 text-emerald-400' 
+                      : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 text-[#2E7D32]'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#4CAF50] animate-pulse" />
+                  <span>Troubleshoot: Log In as Guest Demo Account</span>
+                </button>
 
                 <div className="mt-6 text-center">
                   <button
