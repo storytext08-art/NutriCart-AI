@@ -1415,63 +1415,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  useEffect(() => {
-    let checkInterval: any;
-    
-    const initializeGsi = () => {
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-        if (checkInterval) clearInterval(checkInterval);
-        
-        try {
-          const googleAccountsId = (window as any).google.accounts.id;
-          googleAccountsId.initialize({
-            client_id: '347736643499-au5364gm4kcaoeae3jco9v04ptpvlqkh.apps.googleusercontent.com',
-            callback: async (response: any) => {
-              setAuthError('');
-              setAuthSubmitting(true);
-              try {
-                const credential = GoogleAuthProvider.credential(response.credential);
-                await signInWithCredential(auth, credential);
-              } catch (err: any) {
-                console.error(err);
-                setAuthError(`Google Authentication failed: ${err.message}. If you are in the preview iframe, try Open in New Tab.`);
-              } finally {
-                setAuthSubmitting(false);
-              }
-            },
-            auto_select: false,
-            itp_support: true
-          });
 
-          // Render button if containers exist
-          const containers = document.querySelectorAll('[data-gsi-button]');
-          containers.forEach((container: any) => {
-            googleAccountsId.renderButton(container, {
-              type: 'standard',
-              theme: isDarkMode ? 'filled_blue' : 'outline',
-              size: 'large',
-              text: 'continue_with',
-              shape: 'pill',
-              logo_alignment: 'left',
-              width: container.clientWidth || 340,
-            });
-          });
-        } catch (e) {
-          console.error("GSI Init error:", e);
-        }
-      }
-    };
-
-    // Try immediately
-    initializeGsi();
-    
-    // Fallback/poll for the script to load
-    checkInterval = setInterval(initializeGsi, 500);
-    
-    return () => {
-      if (checkInterval) clearInterval(checkInterval);
-    };
-  }, [isDarkMode, authView, user]);
 
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number>(1);
@@ -1641,13 +1585,21 @@ export default function App() {
   // Settings Modal States
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsOnboarding, setSettingsOnboarding] = useState<OnboardingData | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [newAllergy, setNewAllergy] = useState('');
+  const [newDislike, setNewDislike] = useState('');
+  const [newLove, setNewLove] = useState('');
 
   // Sync settingsOnboarding copy when opening the settings modal
   useEffect(() => {
     if (isSettingsModalOpen && onboarding) {
       setSettingsOnboarding({ ...onboarding });
+      setEditDisplayName(user?.displayName || '');
+      setNewAllergy('');
+      setNewDislike('');
+      setNewLove('');
     }
-  }, [isSettingsModalOpen, onboarding]);
+  }, [isSettingsModalOpen, onboarding, user]);
 
   const handleSaveSettings = async (updated: OnboardingData) => {
     setOnboarding(updated);
@@ -1663,6 +1615,11 @@ export default function App() {
 
     if (user) {
       try {
+        // Save Auth Display Name
+        if (editDisplayName && editDisplayName !== user.displayName) {
+          await updateProfile(user, { displayName: editDisplayName });
+        }
+        
         const docRef = doc(db, 'users', user.uid);
         await setDoc(docRef, { 
           onboarding: updated, 
@@ -2675,30 +2632,7 @@ export default function App() {
       setMealPlan(getMealPlanForDiet('High Protein'));
     };
 
-    const handleGoogleSignIn = async () => {
-      setAuthError('');
-      setAuthSubmitting(true);
-      try {
-        await signInWithPopup(auth, googleProvider);
-      } catch (err: any) {
-        console.error(err);
-        let msg = 'Google authentication failed. Please try email and password.';
-        if (err.code === 'auth/operation-not-allowed') {
-          msg = 'Google sign-in is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method tab, click "Add new provider", and enable "Google" sign-in.';
-        } else if (err.code === 'auth/unauthorized-domain') {
-          msg = `This domain (${window.location.hostname}) is not authorized for Google Sign-In in your Firebase Project. Please add it to the "Authorized domains" list under Firebase Console -> Authentication -> Settings tab.`;
-        } else if (err.code === 'auth/popup-blocked') {
-          msg = 'The Google login popup was blocked by your browser. Please allow popups for this site or open the app in a new tab first.';
-        } else if (err.code === 'auth/internal-error' || err.message?.includes('storage') || err.message?.includes('cookie')) {
-          msg = 'Google Sign-In failed due to browser cookie or storage restrictions. If you are in the AI Studio preview iframe, please open the app in a New Tab (button in the top-right of your screen) to sign in safely!';
-        } else if (err.message) {
-          msg = `Google authentication failed: ${err.message}. If you are in the AI Studio preview, try opening the app in a New Tab using the button in the top-right!`;
-        }
-        setAuthError(msg);
-      } finally {
-        setAuthSubmitting(false);
-      }
-    };
+
 
     return (
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-[#F8F9FA] text-slate-800'} flex flex-col justify-between font-sans`}>
@@ -2800,76 +2734,7 @@ export default function App() {
                   </div>
                 )}
 
-                <div className="relative my-6 flex items-center justify-center">
-                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
-                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
-                    or join with
-                  </span>
-                </div>
 
-                <div className="w-full flex flex-col gap-3">
-                  {/* Official Google Sign-In with Custom Client ID */}
-                  <div className="w-full flex flex-col items-center gap-1.5 border border-dashed border-slate-200 dark:border-slate-700/60 p-3.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-500 dark:text-indigo-400">
-                      Recommended Google Sign-In
-                    </span>
-                    <div 
-                      data-gsi-button="true" 
-                      className="w-full flex justify-center min-h-[40px] overflow-hidden"
-                    ></div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 text-center font-medium">
-                      Guaranteed to work across all browser profiles!
-                    </span>
-                  </div>
-
-                  <div className="relative my-1 flex items-center justify-center">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2 z-10">or use fallback popup</span>
-                    <hr className="absolute w-full border-slate-100 dark:border-slate-800" />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleGoogleSignIn}
-                    disabled={authSubmitting}
-                    className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] border cursor-pointer ${
-                      isDarkMode 
-                        ? 'bg-slate-700 hover:bg-slate-650 border-slate-600 text-white' 
-                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.23 1.96 15.44 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.74-.08-1.3-.176-1.854H12.24V10.29z"/>
-                    </svg>
-                    <span>Legacy Firebase Popup Login</span>
-                  </button>
-                </div>
-
-                {isInIframe && (
-                  <div className={`mt-3 p-3.5 rounded-2xl border text-xs leading-normal ${
-                    isDarkMode 
-                      ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' 
-                      : 'bg-amber-50/70 border-amber-100 text-amber-800'
-                  }`}>
-                    <p className="font-bold flex items-center gap-1.5 mb-1 text-amber-600 dark:text-amber-400">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Google Login Troubleshooter
-                    </p>
-                    <p className="text-[11px] mb-2.5 opacity-90">
-                      Browser security blocks Google authentication popups inside embedded previews. For a flawless Google sign-in experience, open the app in a new top-level tab.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => window.open(window.location.href, '_blank')}
-                      className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${
-                        isDarkMode
-                          ? 'bg-amber-950/80 hover:bg-amber-900/80 border border-amber-800/60 text-amber-300'
-                          : 'bg-amber-100/80 hover:bg-amber-200 border border-amber-200/60 text-amber-900'
-                      }`}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open in New Tab & Sign In</span>
-                    </button>
-                  </div>
-                )}
 
                 <div className="relative my-4 flex items-center justify-center">
                   <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
@@ -2983,77 +2848,6 @@ export default function App() {
                     {authSubmitting ? 'Logging in...' : 'Log In'}
                   </button>
                 </form>
-
-                <div className="relative my-4 flex items-center justify-center">
-                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
-                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
-                    or
-                  </span>
-                </div>
-
-                <div className="w-full flex flex-col gap-3">
-                  {/* Official Google Sign-In with Custom Client ID */}
-                  <div className="w-full flex flex-col items-center gap-1.5 border border-dashed border-slate-200 dark:border-slate-700/60 p-3.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-500 dark:text-indigo-400">
-                      Recommended Google Sign-In
-                    </span>
-                    <div 
-                      data-gsi-button="true" 
-                      className="w-full flex justify-center min-h-[40px] overflow-hidden"
-                    ></div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 text-center font-medium">
-                      Guaranteed to work across all browser profiles!
-                    </span>
-                  </div>
-
-                  <div className="relative my-1 flex items-center justify-center">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2 z-10">or use fallback popup</span>
-                    <hr className="absolute w-full border-slate-100 dark:border-slate-800" />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleGoogleSignIn}
-                    disabled={authSubmitting}
-                    className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] border cursor-pointer ${
-                      isDarkMode 
-                        ? 'bg-slate-700 hover:bg-slate-650 border-slate-600 text-white' 
-                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.23 1.96 15.44 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.74-.08-1.3-.176-1.854H12.24V10.29z"/>
-                    </svg>
-                    <span>Legacy Firebase Popup Login</span>
-                  </button>
-                </div>
-
-                {isInIframe && (
-                  <div className={`mt-3 p-3.5 rounded-2xl border text-xs leading-normal ${
-                    isDarkMode 
-                      ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' 
-                      : 'bg-amber-50/70 border-amber-100 text-amber-800'
-                  }`}>
-                    <p className="font-bold flex items-center gap-1.5 mb-1 text-amber-600 dark:text-amber-400">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Google Login Troubleshooter
-                    </p>
-                    <p className="text-[11px] mb-2.5 opacity-90">
-                      Browser security blocks Google authentication popups inside embedded previews. For a flawless Google sign-in experience, open the app in a new top-level tab.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => window.open(window.location.href, '_blank')}
-                      className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${
-                        isDarkMode
-                          ? 'bg-amber-950/80 hover:bg-amber-900/80 border border-amber-800/60 text-amber-300'
-                          : 'bg-amber-100/80 hover:bg-amber-200 border border-amber-200/60 text-amber-900'
-                      }`}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open in New Tab & Sign In</span>
-                    </button>
-                  </div>
-                )}
 
                 <button
                   type="button"
@@ -3209,77 +3003,6 @@ export default function App() {
                     {authSubmitting ? 'Creating Account...' : 'Sign Up'}
                   </button>
                 </form>
-
-                <div className="relative my-4 flex items-center justify-center">
-                  <hr className={`w-full ${isDarkMode ? 'border-slate-700' : 'border-slate-150'}`} />
-                  <span className={`absolute px-3 text-[10px] font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-400'}`}>
-                    or
-                  </span>
-                </div>
-
-                <div className="w-full flex flex-col gap-3">
-                  {/* Official Google Sign-In with Custom Client ID */}
-                  <div className="w-full flex flex-col items-center gap-1.5 border border-dashed border-slate-200 dark:border-slate-700/60 p-3.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-500 dark:text-indigo-400">
-                      Recommended Google Sign-In
-                    </span>
-                    <div 
-                      data-gsi-button="true" 
-                      className="w-full flex justify-center min-h-[40px] overflow-hidden"
-                    ></div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 text-center font-medium">
-                      Guaranteed to work across all browser profiles!
-                    </span>
-                  </div>
-
-                  <div className="relative my-1 flex items-center justify-center">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2 z-10">or use fallback popup</span>
-                    <hr className="absolute w-full border-slate-100 dark:border-slate-800" />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleGoogleSignIn}
-                    disabled={authSubmitting}
-                    className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] border cursor-pointer ${
-                      isDarkMode 
-                        ? 'bg-slate-700 hover:bg-slate-650 border-slate-600 text-white' 
-                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.23 1.96 15.44 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.74-.08-1.3-.176-1.854H12.24V10.29z"/>
-                    </svg>
-                    <span>Legacy Firebase Popup Login</span>
-                  </button>
-                </div>
-
-                {isInIframe && (
-                  <div className={`mt-3 p-3.5 rounded-2xl border text-xs leading-normal ${
-                    isDarkMode 
-                      ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' 
-                      : 'bg-amber-50/70 border-amber-100 text-amber-800'
-                  }`}>
-                    <p className="font-bold flex items-center gap-1.5 mb-1 text-amber-600 dark:text-amber-400">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Google Login Troubleshooter
-                    </p>
-                    <p className="text-[11px] mb-2.5 opacity-90">
-                      Browser security blocks Google authentication popups inside embedded previews. For a flawless Google sign-in experience, open the app in a new top-level tab.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => window.open(window.location.href, '_blank')}
-                      className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${
-                        isDarkMode
-                          ? 'bg-amber-950/80 hover:bg-amber-900/80 border border-amber-800/60 text-amber-300'
-                          : 'bg-amber-100/80 hover:bg-amber-200 border border-amber-200/60 text-amber-900'
-                      }`}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open in New Tab & Sign In</span>
-                    </button>
-                  </div>
-                )}
 
                 <button
                   type="button"
@@ -5938,6 +5661,278 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* STEP 4: Name & Preferred Stores */}
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 space-y-4">
+                      <h4 className="text-xs font-black text-[#2E7D32] uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#4CAF50]"></span> Step 4: Profile &amp; Stores
+                      </h4>
+
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
+                        <input
+                          type="text"
+                          value={editDisplayName}
+                          onChange={e => setEditDisplayName(e.target.value)}
+                          placeholder="Your display name"
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-2">Preferred Stores</label>
+                        <div className="flex flex-wrap gap-2">
+                          {(COUNTRIES[settingsOnboarding.country || 'Romania']?.stores || COUNTRIES['Romania'].stores).map(store => {
+                            const isSelected = settingsOnboarding.preferredStores?.includes(store);
+                            return (
+                              <button
+                                key={store}
+                                type="button"
+                                onClick={() => {
+                                  const currentList = settingsOnboarding.preferredStores || [];
+                                  const nextStores = isSelected
+                                    ? currentList.filter(s => s !== store)
+                                    : [...currentList, store];
+                                  setSettingsOnboarding({ ...settingsOnboarding, preferredStores: nextStores });
+                                }}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition duration-150 cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#2E7D32]/50'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                              >
+                                {store}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* STEP 5: Food Preferences & Allergies */}
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 space-y-4">
+                      <h4 className="text-xs font-black text-[#2E7D32] uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#4CAF50]"></span> Step 5: Food Preferences &amp; Allergies
+                      </h4>
+
+                      {/* Food Allergies */}
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">Food Allergies</label>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {(settingsOnboarding.foodAllergies || []).length === 0 ? (
+                            <span className="text-slate-400 text-xs italic">No allergies registered</span>
+                          ) : (
+                            (settingsOnboarding.foodAllergies || []).map(allergy => (
+                              <span
+                                key={allergy}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold border border-rose-150"
+                              >
+                                {allergy}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSettingsOnboarding({
+                                      ...settingsOnboarding,
+                                      foodAllergies: (settingsOnboarding.foodAllergies || []).filter(item => item !== allergy)
+                                    });
+                                  }}
+                                  className="hover:text-rose-900 font-extrabold focus:outline-none cursor-pointer"
+                                >
+                                  &times;
+                                </button>
+                              </span>
+                            ))
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newAllergy}
+                            onChange={e => setNewAllergy(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newAllergy.trim()) {
+                                  const trimmed = newAllergy.trim();
+                                  if (!settingsOnboarding.foodAllergies?.includes(trimmed)) {
+                                    setSettingsOnboarding({
+                                      ...settingsOnboarding,
+                                      foodAllergies: [...(settingsOnboarding.foodAllergies || []), trimmed]
+                                    });
+                                  }
+                                  setNewAllergy('');
+                                }
+                              }
+                            }}
+                            placeholder="Add allergy (e.g. Peanuts) and press enter"
+                            className="flex-1 bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (newAllergy.trim()) {
+                                const trimmed = newAllergy.trim();
+                                if (!settingsOnboarding.foodAllergies?.includes(trimmed)) {
+                                  setSettingsOnboarding({
+                                    ...settingsOnboarding,
+                                    foodAllergies: [...(settingsOnboarding.foodAllergies || []), trimmed]
+                                  });
+                                }
+                                setNewAllergy('');
+                              }
+                            }}
+                            className="bg-[#2E7D32] hover:bg-[#1b4e20] text-white px-3.5 rounded-xl font-bold text-xs transition cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Disliked Foods */}
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">Foods You Dislike</label>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {(settingsOnboarding.foodsDislike || []).length === 0 ? (
+                            <span className="text-slate-400 text-xs italic">No dislikes registered</span>
+                          ) : (
+                            (settingsOnboarding.foodsDislike || []).map(dislike => (
+                              <span
+                                key={dislike}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 text-xs font-bold border border-orange-150"
+                              >
+                                {dislike}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSettingsOnboarding({
+                                      ...settingsOnboarding,
+                                      foodsDislike: (settingsOnboarding.foodsDislike || []).filter(item => item !== dislike)
+                                    });
+                                  }}
+                                  className="hover:text-orange-900 font-extrabold focus:outline-none cursor-pointer"
+                                >
+                                  &times;
+                                </button>
+                              </span>
+                            ))
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newDislike}
+                            onChange={e => setNewDislike(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newDislike.trim()) {
+                                  const trimmed = newDislike.trim();
+                                  if (!settingsOnboarding.foodsDislike?.includes(trimmed)) {
+                                    setSettingsOnboarding({
+                                      ...settingsOnboarding,
+                                      foodsDislike: [...(settingsOnboarding.foodsDislike || []), trimmed]
+                                    });
+                                  }
+                                  setNewDislike('');
+                                }
+                              }
+                            }}
+                            placeholder="Add disliked food and press enter"
+                            className="flex-1 bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (newDislike.trim()) {
+                                const trimmed = newDislike.trim();
+                                if (!settingsOnboarding.foodsDislike?.includes(trimmed)) {
+                                  setSettingsOnboarding({
+                                    ...settingsOnboarding,
+                                    foodsDislike: [...(settingsOnboarding.foodsDislike || []), trimmed]
+                                  });
+                                }
+                                setNewDislike('');
+                              }
+                            }}
+                            className="bg-[#2E7D32] hover:bg-[#1b4e20] text-white px-3.5 rounded-xl font-bold text-xs transition cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Loved Foods */}
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">Foods You Love</label>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {(settingsOnboarding.foodsLove || []).length === 0 ? (
+                            <span className="text-slate-400 text-xs italic">No loved foods registered</span>
+                          ) : (
+                            (settingsOnboarding.foodsLove || []).map(love => (
+                              <span
+                                key={love}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-150"
+                              >
+                                {love}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSettingsOnboarding({
+                                      ...settingsOnboarding,
+                                      foodsLove: (settingsOnboarding.foodsLove || []).filter(item => item !== love)
+                                    });
+                                  }}
+                                  className="hover:text-emerald-900 font-extrabold focus:outline-none cursor-pointer"
+                                >
+                                  &times;
+                                </button>
+                              </span>
+                            ))
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newLove}
+                            onChange={e => setNewLove(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newLove.trim()) {
+                                  const trimmed = newLove.trim();
+                                  if (!settingsOnboarding.foodsLove?.includes(trimmed)) {
+                                    setSettingsOnboarding({
+                                      ...settingsOnboarding,
+                                      foodsLove: [...(settingsOnboarding.foodsLove || []), trimmed]
+                                    });
+                                  }
+                                  setNewLove('');
+                                }
+                              }
+                            }}
+                            placeholder="Add loved food and press enter"
+                            className="flex-1 bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (newLove.trim()) {
+                                const trimmed = newLove.trim();
+                                if (!settingsOnboarding.foodsLove?.includes(trimmed)) {
+                                  setSettingsOnboarding({
+                                    ...settingsOnboarding,
+                                    foodsLove: [...(settingsOnboarding.foodsLove || []), trimmed]
+                                  });
+                                }
+                                setNewLove('');
+                              }
+                            }}
+                            className="bg-[#2E7D32] hover:bg-[#1b4e20] text-white px-3.5 rounded-xl font-bold text-xs transition cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end gap-3">
