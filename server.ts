@@ -304,17 +304,35 @@ Guidelines for optimization:
 6. Ensure your response is strictly VALID JSON and nothing else. No markdown wrapper like \`\`\`json unless requested, but to be safe, output clean JSON.`;
 
     // Map conversation messages to Gemini format
-    const contents = messages.map((m: any) => ({
+    const rawContents = messages.map((m: any) => ({
       role: m.sender === 'user' ? 'user' : 'model',
       parts: [{ text: m.text }],
     }));
 
-    // If there is an immediate custom prompt from a click, append or set as the latest message
+    // If there is an immediate custom prompt, append it ONLY if it isn't already the last message
     if (customPrompt) {
-      contents.push({
-        role: 'user',
-        parts: [{ text: customPrompt }],
-      });
+      const lastMessage = rawContents[rawContents.length - 1];
+      if (!lastMessage || lastMessage.parts[0].text !== customPrompt || lastMessage.role !== 'user') {
+        rawContents.push({
+          role: 'user',
+          parts: [{ text: customPrompt }],
+        });
+      }
+    }
+
+    // Clean up contents to guarantee alternating user/model roles and eliminate consecutive same-role duplicates
+    const contents: any[] = [];
+    for (const item of rawContents) {
+      if (contents.length > 0 && contents[contents.length - 1].role === item.role) {
+        // Merge consecutive parts with a newline
+        contents[contents.length - 1].parts[0].text = 
+          (contents[contents.length - 1].parts[0].text + "\n" + item.parts[0].text).trim();
+      } else {
+        contents.push({
+          role: item.role,
+          parts: [{ text: item.parts[0].text || '' }]
+        });
+      }
     }
 
     const response = await ai.models.generateContent({

@@ -1176,6 +1176,33 @@ export const DIET_RESEARCH_DATABASE: Record<string, DietResearchProfile> = {
   }
 };
 
+// Helper conversions for Metric <-> Imperial physical profile stats
+export const cmToFeetInches = (cm: number): { feet: number; inches: number } => {
+  if (!cm) return { feet: 0, inches: 0 };
+  const totalInches = cm / 2.54;
+  const feet = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches % 12);
+  if (inches === 12) {
+    return { feet: feet + 1, inches: 0 };
+  }
+  return { feet, inches };
+};
+
+export const feetInchesToCm = (feet: number, inches: number): number => {
+  const totalInches = (feet * 12) + inches;
+  return Math.round(totalInches * 2.54);
+};
+
+export const kgToLbs = (kg: number): number => {
+  if (!kg) return 0;
+  return Math.round(kg * 2.2046226218);
+};
+
+export const lbsToKg = (lbs: number): number => {
+  if (!lbs) return 0;
+  return Math.round(lbs * 0.45359237);
+};
+
 export default function App() {
   // Application language is always English
   const appLanguage = 'en';
@@ -1416,6 +1443,7 @@ export default function App() {
 
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number>(1);
+  const [useImperial, setUseImperial] = useState<boolean>(false);
   const [hasExistingProfile, setHasExistingProfile] = useState<boolean>(false);
   const [originalOnboardingBackup, setOriginalOnboardingBackup] = useState<OnboardingData | null>(null);
   const [tempOnboarding, setTempOnboarding] = useState<OnboardingData>({
@@ -3073,8 +3101,32 @@ export default function App() {
 
             {onboardingStep === 1 && (
               <div className="space-y-4">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{dict.physicalProfileTitle}</h1>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{dict.physicalProfileDesc}</p>
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{dict.physicalProfileTitle}</h1>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{dict.physicalProfileDesc}</p>
+                </div>
+
+                {/* Measurement system toggle switch */}
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 p-2.5 rounded-2xl">
+                  <span className="text-xs font-bold text-slate-600 ml-1">Measurement System</span>
+                  <div className="inline-flex bg-slate-200/50 p-0.5 rounded-xl border border-slate-200/40">
+                    <button
+                      type="button"
+                      onClick={() => setUseImperial(false)}
+                      className={`text-[10px] px-3.5 py-1 rounded-lg font-black uppercase tracking-wider transition-all ${!useImperial ? 'bg-[#4CAF50] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Metric (cm, kg)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUseImperial(true)}
+                      className={`text-[10px] px-3.5 py-1 rounded-lg font-black uppercase tracking-wider transition-all ${useImperial ? 'bg-[#4CAF50] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Imperial (ft/in, lbs)
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.age} <span className="text-red-500 font-bold">*</span></label>
@@ -3082,7 +3134,7 @@ export default function App() {
                       type="number" 
                       value={tempOnboarding.age === 0 ? '' : tempOnboarding.age}
                       onChange={e => setTempOnboarding({ ...tempOnboarding, age: parseInt(e.target.value) || 0 })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-mono font-bold text-slate-700" 
                     />
                   </div>
                   <div>
@@ -3090,7 +3142,7 @@ export default function App() {
                     <select 
                       value={tempOnboarding.gender}
                       onChange={e => setTempOnboarding({ ...tempOnboarding, gender: e.target.value as any })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-medium text-slate-800"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-bold text-slate-700"
                     >
                       <option value="" disabled hidden>Choose Gender</option>
                       <option value="male">{dict.genderMale}</option>
@@ -3098,24 +3150,85 @@ export default function App() {
                       <option value="other">{dict.genderOther}</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.height} <span className="text-red-500 font-bold">*</span></label>
-                    <input 
-                      type="number" 
-                      value={tempOnboarding.height === 0 ? '' : tempOnboarding.height}
-                      onChange={e => setTempOnboarding({ ...tempOnboarding, height: parseInt(e.target.value) || 0 })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.weight} <span className="text-red-500 font-bold">*</span></label>
-                    <input 
-                      type="number" 
-                      value={tempOnboarding.weight === 0 ? '' : tempOnboarding.weight}
-                      onChange={e => setTempOnboarding({ ...tempOnboarding, weight: parseInt(e.target.value) || 0 })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none" 
-                    />
-                  </div>
+
+                  {useImperial ? (
+                    <>
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Height (ft / in) <span className="text-red-500 font-bold">*</span></label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="relative flex items-center">
+                            <input 
+                              type="number" 
+                              placeholder="ft"
+                              value={tempOnboarding.height === 0 ? '' : cmToFeetInches(tempOnboarding.height).feet}
+                              onChange={e => {
+                                const f = parseInt(e.target.value) || 0;
+                                const { inches } = cmToFeetInches(tempOnboarding.height);
+                                setTempOnboarding({ ...tempOnboarding, height: feetInchesToCm(f, inches) });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pr-8 sm:p-3 sm:pr-10 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-mono font-bold text-slate-700" 
+                            />
+                            <span className="absolute right-3 text-[10px] font-bold text-slate-400 font-sans">ft</span>
+                          </div>
+                          <div className="relative flex items-center">
+                            <input 
+                              type="number" 
+                              placeholder="in"
+                              min="0"
+                              max="11"
+                              value={tempOnboarding.height === 0 ? '' : cmToFeetInches(tempOnboarding.height).inches}
+                              onChange={e => {
+                                const inc = parseInt(e.target.value) || 0;
+                                const { feet } = cmToFeetInches(tempOnboarding.height);
+                                setTempOnboarding({ ...tempOnboarding, height: feetInchesToCm(feet, inc) });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pr-8 sm:p-3 sm:pr-10 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-mono font-bold text-slate-700" 
+                            />
+                            <span className="absolute right-3 text-[10px] font-bold text-slate-400 font-sans">in</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Weight (lbs) <span className="text-red-500 font-bold">*</span></label>
+                        <div className="relative flex items-center">
+                          <input 
+                            type="number" 
+                            placeholder="lbs"
+                            value={tempOnboarding.weight === 0 ? '' : kgToLbs(tempOnboarding.weight)}
+                            onChange={e => {
+                              const lbs = parseInt(e.target.value) || 0;
+                              setTempOnboarding({ ...tempOnboarding, weight: lbsToKg(lbs) });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pr-10 sm:p-3 sm:pr-12 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-mono font-bold text-slate-700" 
+                          />
+                          <span className="absolute right-3.5 text-[10px] font-bold text-slate-400 font-sans">lbs</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.height} <span className="text-red-500 font-bold">*</span></label>
+                        <input 
+                          type="number" 
+                          placeholder="cm"
+                          value={tempOnboarding.height === 0 ? '' : tempOnboarding.height}
+                          onChange={e => setTempOnboarding({ ...tempOnboarding, height: parseInt(e.target.value) || 0 })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-mono font-bold text-slate-700" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">{dict.weight} <span className="text-red-500 font-bold">*</span></label>
+                        <input 
+                          type="number" 
+                          placeholder="kg"
+                          value={tempOnboarding.weight === 0 ? '' : tempOnboarding.weight}
+                          onChange={e => setTempOnboarding({ ...tempOnboarding, weight: parseInt(e.target.value) || 0 })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-mono font-bold text-slate-700" 
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="mt-4">
                   <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1.5">{dict.activityLevel} <span className="text-red-500 font-bold">*</span></label>
@@ -5602,6 +5715,27 @@ export default function App() {
                         <span className="w-2 h-2 rounded-full bg-[#4CAF50]"></span> Step 1: Physical Profile
                       </h4>
                       
+                      {/* Measurement system toggle switch */}
+                      <div className="flex items-center justify-between bg-white border border-slate-200/60 p-2 rounded-xl">
+                        <span className="text-[11px] font-bold text-slate-500 ml-1">Measurement System</span>
+                        <div className="inline-flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/30">
+                          <button
+                            type="button"
+                            onClick={() => setUseImperial(false)}
+                            className={`text-[9px] px-2.5 py-0.5 rounded font-black uppercase tracking-wider transition-all ${!useImperial ? 'bg-[#4CAF50] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                          >
+                            Metric
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setUseImperial(true)}
+                            className={`text-[9px] px-2.5 py-0.5 rounded font-black uppercase tracking-wider transition-all ${useImperial ? 'bg-[#4CAF50] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                          >
+                            Imperial
+                          </button>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Age</label>
@@ -5624,24 +5758,83 @@ export default function App() {
                             <option value="other">Other</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Height (cm)</label>
-                          <input 
-                            type="number" 
-                            value={settingsOnboarding.height}
-                            onChange={e => setSettingsOnboarding({ ...settingsOnboarding, height: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Weight (kg)</label>
-                          <input 
-                            type="number" 
-                            value={settingsOnboarding.weight}
-                            onChange={e => setSettingsOnboarding({ ...settingsOnboarding, weight: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
-                          />
-                        </div>
+
+                        {useImperial ? (
+                          <>
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Height (ft / in)</label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="relative flex items-center">
+                                  <input 
+                                    type="number" 
+                                    placeholder="ft"
+                                    value={settingsOnboarding.height === 0 ? '' : cmToFeetInches(settingsOnboarding.height).feet}
+                                    onChange={e => {
+                                      const f = parseInt(e.target.value) || 0;
+                                      const { inches } = cmToFeetInches(settingsOnboarding.height);
+                                      setSettingsOnboarding({ ...settingsOnboarding, height: feetInchesToCm(f, inches) });
+                                    }}
+                                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 pr-7 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
+                                  />
+                                  <span className="absolute right-2 text-[10px] font-bold text-slate-400">ft</span>
+                                </div>
+                                <div className="relative flex items-center">
+                                  <input 
+                                    type="number" 
+                                    placeholder="in"
+                                    min="0"
+                                    max="11"
+                                    value={settingsOnboarding.height === 0 ? '' : cmToFeetInches(settingsOnboarding.height).inches}
+                                    onChange={e => {
+                                      const inc = parseInt(e.target.value) || 0;
+                                      const { feet } = cmToFeetInches(settingsOnboarding.height);
+                                      setSettingsOnboarding({ ...settingsOnboarding, height: feetInchesToCm(feet, inc) });
+                                    }}
+                                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 pr-7 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
+                                  />
+                                  <span className="absolute right-2 text-[10px] font-bold text-slate-400">in</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Weight (lbs)</label>
+                              <div className="relative flex items-center">
+                                <input 
+                                  type="number" 
+                                  placeholder="lbs"
+                                  value={settingsOnboarding.weight === 0 ? '' : kgToLbs(settingsOnboarding.weight)}
+                                  onChange={e => {
+                                    const lbs = parseInt(e.target.value) || 0;
+                                    setSettingsOnboarding({ ...settingsOnboarding, weight: lbsToKg(lbs) });
+                                  }}
+                                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 pr-10 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
+                                />
+                                <span className="absolute right-2 text-[10px] font-bold text-slate-400">lbs</span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Height (cm)</label>
+                              <input 
+                                type="number" 
+                                value={settingsOnboarding.height}
+                                onChange={e => setSettingsOnboarding({ ...settingsOnboarding, height: parseInt(e.target.value) || 0 })}
+                                className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">Weight (kg)</label>
+                              <input 
+                                type="number" 
+                                value={settingsOnboarding.weight}
+                                onChange={e => setSettingsOnboarding({ ...settingsOnboarding, weight: parseInt(e.target.value) || 0 })}
+                                className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent outline-none font-semibold text-slate-800" 
+                              />
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       <div>
